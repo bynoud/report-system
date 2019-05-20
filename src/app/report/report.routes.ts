@@ -1,6 +1,6 @@
 import { Routes, RouterModule } from "@angular/router";
 import { ReportComponent } from './report.component';
-import { AuthService as AuthGaurd } from "../services/firebase/auth.service";
+import { AuthService as AuthGaurd } from "src/app/core/services/auth.service";
 import { ReportSummaryComponent } from './report-summary/report-summary.component';
 import { ReportUserComponent } from './report-user/report-user.component';
 import { NgModule } from '@angular/core';

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from 'src/app/services/firebase/auth.service';
+import { AuthService } from 'src/app/core/services/auth.service';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 
 const LOREM_PIXEL = [

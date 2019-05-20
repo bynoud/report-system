@@ -4,7 +4,7 @@ import { UserComponent } from './user.component';
 import { LoginUserComponent } from './login-user/login-user.component';
 import { CreateUserComponent } from './create-user/create-user.component';
 import { EditUserComponent } from './edit-user/edit-user.component';
-import { AuthService as AuthGaurd } from 'src/app/services/firebase/auth.service';
+import { AuthService as AuthGaurd } from 'src/app/core/services/auth.service';
 
 const routes: Routes = [{
     path: 'user', component: UserComponent,

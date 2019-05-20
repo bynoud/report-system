@@ -10,6 +10,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TaskNewComponent } from './task-new/task-new.component';
 import { FlashMessageModule } from 'src/app/core/flash-message/flash-message.module';
 import { ReportSummaryDetailComponent } from './report-summary/report-summary-detail.component';
+import { ReportService } from './report.service';
 
 @NgModule({
   declarations: [
@@ -27,6 +28,7 @@ import { ReportSummaryDetailComponent } from './report-summary/report-summary-de
     ReactiveFormsModule,
     FlashMessageModule,
     ReportRoutingModule,
-  ]
+  ],
+  providers: [ReportService]
 })
 export class ReportModule { }

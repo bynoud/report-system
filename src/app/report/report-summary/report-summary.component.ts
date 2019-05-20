@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { ReportService, ReportSummary } from 'src/app/services/firebase/report.service';
+import { ReportService, ReportSummary } from '../report.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-report-summary',

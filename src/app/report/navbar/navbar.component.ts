@@ -1,15 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { User } from 'src/app/models/user';
-import { AuthService } from 'src/app/services/firebase/auth.service';
+import { AuthService } from 'src/app/core/services/auth.service';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css']
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnDestroy {
   user: User;
+  subs: Subscription[] = [];
 
   constructor(
     private router: Router,
@@ -17,12 +19,20 @@ export class NavbarComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.authService.activeUser$.subscribe(user => this.user = user)
+    this.subs.push(this.authService.activeUser$.subscribe(user => this.user = user))
   }
 
   onLogout() {
-    this.authService.signOut();
-    this.router.navigate(["/"])
+    console.log("to log out");
+    
+    this.authService.signOut().then(() => {
+      this.router.navigate(["/"])
+    })
+  }
+
+  ngOnDestroy() {
+    console.log("destroy");
+    this.subs.forEach(sub => sub.unsubscribe())
   }
 
 

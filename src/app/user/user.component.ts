@@ -1,7 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { AuthService } from '../services/firebase/auth.service';
-import { User } from '../models/user';
 
 @Component({
   selector: 'app-user',

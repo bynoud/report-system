@@ -13,14 +13,14 @@ import { environment } from '../environments/environment';
 import { AppRoutingModule } from './app.routes';
 import { ReportModule } from './report/report.module';
 import { UserModule } from './user/user.module';
-import { PageNotfoundComponent } from './main-pages/page-notfound.component';
-import { PageMainComponent } from './main-pages/page-main.component';
+import { LoadingComponent } from './core/loading/loading.component';
+import { LoadingBaseComponent } from './core/loading-base/loading-base.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    PageNotfoundComponent,
-    PageMainComponent
+    LoadingComponent,
+    LoadingBaseComponent,
   ],
   imports: [
     BrowserModule,
@@ -35,6 +35,7 @@ import { PageMainComponent } from './main-pages/page-main.component';
     AppRoutingModule,
   ],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  entryComponents: [LoadingComponent]
 })
 export class AppModule {}

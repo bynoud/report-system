@@ -1,18 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { AuthService } from 'src/app/services/firebase/auth.service';
+import { AuthService } from 'src/app/core/services/auth.service';
 import { User } from 'src/app/models/user';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-edit-user',
   templateUrl: './edit-user.component.html',
   styleUrls: ['./edit-user.component.css']
 })
-export class EditUserComponent implements OnInit {
+export class EditUserComponent implements OnInit, OnDestroy {
 
   userForm: FormGroup;
   user: User;
+  subs: Subscription[] = [];
 
   validation_messages = {
     'name': [
@@ -36,16 +38,16 @@ export class EditUserComponent implements OnInit {
               private authService: AuthService) { }
 
   ngOnInit() {
-    this.route.params.subscribe( params => {
+    this.subs.push(this.route.params.subscribe( params => {
       var userID = params['id']; //['userID'];
-      this.authService.getUser$(userID)
+      this.subs.push(this.authService.getUser$(userID, "from edit user")
       .subscribe(
         user => {
           this.user = user;
           this.createForm();
         }
-      );
-    })
+      ))
+    }))
     // this.route.data.subscribe(routeData => {
     //   let data = routeData['userID'];
     //   if (data) {
@@ -62,6 +64,10 @@ export class EditUserComponent implements OnInit {
       email: [this.user.email, Validators.required],
       // age: [this.user.age, Validators.required]
     });
+  }
+
+  ngOnDestroy() {
+    this.subs.forEach(sub => sub.unsubscribe())
   }
 
 }

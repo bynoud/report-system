@@ -1,8 +1,9 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import { Task, Comment, DueDate, Target, nowMillis, Status, StatusList } from 'src/app/models/reports';
-import { ReportService } from 'src/app/services/firebase/report.service';
+import { ReportService } from '../report.service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
+import { Subscription } from 'rxjs';
 
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
 const WARN_PERIOD = 3;  // issue warning before 3 days
@@ -75,11 +76,12 @@ const NEXT_TARGET_DESC = {
   templateUrl: './task-detail.component.html',
   styleUrls: ['./task-detail.component.css']
 })
-export class TaskDetailComponent implements OnInit {
+export class TaskDetailComponent implements OnInit, OnDestroy {
   @Input() task: Task;
   comments: Comment[] = [];
   duedates: DueDate[] = [];
   targets: Target[] = [];
+  subs: Subscription[] = [];
 
   ready = false;
 
@@ -103,23 +105,18 @@ export class TaskDetailComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.reportService.onCommentsChanged(this.task)
-      .subscribe(comments => {
+    this.subs.push(this.reportService.onCommentsChanged$(this.task).subscribe(comments => {
         this.comments = comments;
-        console.log("get comms", this.comments);
-        
         this.updateStatus();
-      })
-    this.reportService.onTargetsChanged(this.task)
-      .subscribe(targets => {
+      }))
+    this.subs.push(this.reportService.onTargetsChanged$(this.task).subscribe(targets => {
         this.targets = targets
         this.updateStatus();
-      })
-    this.reportService.onDuedatesChanged(this.task)
-      .subscribe(duedates => {
+      }))
+    this.subs.push(this.reportService.onDuedatesChanged$(this.task).subscribe(duedates => {
         this.duedates = duedates
         this.updateStatus();
-      })
+      }))
 
     this.createForm();
   }
@@ -202,6 +199,11 @@ export class TaskDetailComponent implements OnInit {
   dateFormat(timestamp: firebase.firestore.Timestamp) {
     var d = timestamp.toDate();
     return d.toLocaleDateString('en-US', {day:'numeric', month:'short', year:'numeric'});
+  }
+
+  ngOnDestroy() {
+    console.log("destroy");
+    this.subs.forEach(sub => sub.unsubscribe())
   }
 
 }

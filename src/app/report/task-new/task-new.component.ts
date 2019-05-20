@@ -1,7 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { FormGroup, Validators, FormBuilder, FormArray } from '@angular/forms';
-import { ReportService } from 'src/app/services/firebase/report.service';
-import { AuthService } from 'src/app/services/firebase/auth.service';
+import { ReportService } from '../report.service';
+import { AuthService } from 'src/app/core/services/auth.service';
 import { ActivatedRoute } from '@angular/router';
 
 const TARGETS_PH = [
