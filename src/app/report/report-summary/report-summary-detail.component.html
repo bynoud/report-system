@@ -1,0 +1,16 @@
+<p>report sum detail</p>
+
+<div class="card">
+    <p *ngIf="!user">Loading...</p>
+    <div *ngIf="user" class="card-header">{{user.displayName}}</div>
+    <div *ngFor="let sum of summary">
+      <p>{{sum.task.title}}</p>
+      <div *ngFor="let com of sum.comms">
+        <hr>
+        <p>{{com.at}}</p>
+        <p>{{com.by}}</p>
+        <p>{{com.type}}</p>
+        <p>{{com.text}}</p>
+      </div>
+    </div>
+  </div>

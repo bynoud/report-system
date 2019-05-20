@@ -1,0 +1,61 @@
+<div class="edit-page">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-user active" aria-current="page">Edit User</li>
+    </ol>
+  </nav>
+  <div *ngIf="!user">
+    <img src="assets/loading.svg" alt="Loading ...">
+  </div>
+  <div class="page-content" *ngIf="user">
+    <div class="row">
+      <div class="col col-md-4">
+        <img class="img-avatar" [src]="user.photoURL">
+        <button mat-stroked-button class="change-img-button" color="primary" (click)="openDialog()">Change Avatar</button>
+      </div>
+      <div class="col col-md-8">
+
+        <form class="edit-form" [formGroup]="userForm" novalidate (ngSubmit)="onSubmit(userForm.value)">
+
+          <div class="form-group">
+            <!-- <mat-form-field class="input-style"> -->
+              <input matInput placeholder="Name" class="form-control" formControlName="name">
+            <!-- </mat-form-field> -->
+            <ng-container *ngFor="let validation of validation_messages.name">
+              <!-- <mat-error *ngIf="userForm.get('name').hasError(validation.type) && (userForm.get('name').dirty || userForm.get('name').touched)">{{validation.message}}</mat-error> -->
+              <p *ngIf="userForm.get('name').hasError(validation.type) && (userForm.get('name').dirty || userForm.get('name').touched)">{{validation.message}}</p>
+            </ng-container>
+          </div>
+
+          <div class="form-group">
+            <!-- <mat-form-field class="input-style"> -->
+              <input matInput placeholder="email" class="form-control" formControlName="email">
+            <!-- </mat-form-field> -->
+            <ng-container *ngFor="let validation of validation_messages.email">
+              <!-- <mat-error *ngIf="userForm.get('email').hasError(validation.type) && (userForm.get('email').dirty || userForm.get('email').touched)">{{validation.message}}</mat-error> -->
+              <p *ngIf="userForm.get('email').hasError(validation.type) && (userForm.get('email').dirty || userForm.get('email').touched)">{{validation.message}}</p>
+            </ng-container>
+          </div>
+<!-- 
+          <div class="form-group">
+            <mat-form-field class="input-style">
+              <input matInput type="number" min="0" max="100" placeholder="Age" class="form-control" formControlName="age">
+            </mat-form-field>
+            <ng-container *ngFor="let validation of validation_messages.age">
+              <mat-error *ngIf="userForm.get('age').hasError(validation.type) && (userForm.get('age').dirty || userForm.get('age').touched)">{{validation.message}}</mat-error>
+            </ng-container>
+          </div> -->
+
+          <div class="row submit-button-container">
+            <div class="col-md-4">
+              <button mat-raised-button class="submit-button" color="primary" type="submit" [disabled]="!userForm.valid">Save</button>
+            </div>
+            <div class="col-md-4">
+              <button mat-raised-button class="delete-button" color="warn" type="button" (click)="delete()">Delete</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

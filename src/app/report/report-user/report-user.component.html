@@ -1,0 +1,6 @@
+
+<p *ngIf="!tasks">Loading report-user ...</p>
+<div *ngIf="tasks">
+    <h5 *ngIf="tasks.length==0">There's no Opened Reports</h5>
+    <app-task-detail *ngFor="let task of tasks" [task]="task"></app-task-detail>
+</div>

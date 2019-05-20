@@ -1,0 +1,102 @@
+
+<div class="card card-shadow">
+  <div class="card-header" data-toggle="collapse" attr.data-target="#report-item--{{task.uid}}-collapse">
+    <div class='d-flex align-items-start'
+      data-toggle="tooltip" data-placement="right" [title]="taskStatus.desc">
+        <i [className]="'fas status-icon ' + taskStatus.icon"
+          [style.color]="taskStatus.iconColor"></i>
+        <span class="text-primary font-weight-bold mr-2 text-nowrap">{{task.project}}</span>
+        <span class="text-secondary mr-3 truncate-on-close text-truncate font-weight-bold">
+          {{task.title}}
+        </span>
+        <i class="fas fa-angle-down more-less"></i>
+    </div>
+  </div>
+
+  <div class="card-body py-3">
+    <!-- task description -->
+    <p class="card-title truncate-on-close text-truncate text-muted">{{task.desc}}</p>
+
+    <!-- task deadline -->
+    <div class='mb-3'>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-info btn-round-left" disabled>
+                    {{dateFormat(task.enteredAt)}}
+            </button>
+            <button type="button" class="btn dropdown-toggle btn-round-right" data-toggle="dropdown"
+              [style.color]="taskStatus.iconColor" [style.borderColor]="taskStatus.iconColor">
+                <span data-toggle="tooltip" data-placement="right" title="Click to open Re-schedule form">
+                  {{dateFormat(task.due)}}</span>
+            </button>
+            <div class="dropdown-menu">
+                <h6 class="dropdown-header">Re-schedule</h6>
+                <form #redueForm="ngForm" (ngSubmit)="submitRedue()" class="px-4 py-3">
+                    <input type="date" [(ngModel)]="model.redueDate" name="redueDate" class="form-control" required>
+                    <button type="submit" class="btn btn-primary">Change</button>
+                </form>
+            </div>
+        </div>
+
+        <div *ngIf="duedates.length > 1" class="dropdown d-inline"
+          data-toggle="tooltip" data-placement="right" title="Click to show re-schedule history">
+            <span class="badge badge-pill badge-info dropdown-toggle align-middle ml-2" 
+              data-toggle="dropdown" [style.cursor]="'pointer'">{{duedates.length - 1}}</span>
+            <div class="dropdown-menu dropdown-menu-right dropdown-info-only">
+                <h6 class="dropdown-header">Re-schedule history</h6>
+                <p *ngFor="let d of duedates" class="dropdown-item disabled" href=''>{{dateFormat(d.due)}}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- task targets -->
+    <div *ngFor="let target of targets" class="card-text">
+        <div class="dropdown show"
+          data-toggle="tooltip" data-placement="right" [title]="getTargetStatusDesc(target)">
+            <a [className]="'btn dropdown-toggle btn-sm text-left target-status ' + target.status"
+              href="#" role="button" data-toggle="dropdown"
+              >
+              <span class="d-flex align-items-center">
+                <i [className]="'ml-auto ' + getTargetIcon(target)"></i></span>
+            </a>
+            <div class="dropdown-menu target-status-items">
+              <h6 class="dropdown-header">{{getTargetStatusDesc(target)}}</h6>
+              <a *ngFor="let next of getNextTargets(target)"
+                class="dropdown-item text-left" [style.cursor]="'pointer'"
+                [class.active]="next.name == target.status"
+                (click)="submitTargetStatus(target, next.name)">
+                {{next.desc}}</a>
+            </div>
+            <span [className]="'ml-2 target-text ' + target.status">{{target.desc}}</span>
+        </div>
+    </div>
+
+    <!-- task latest status -->
+    <!-- <div class='editor-area border-primary py-2' data-report-task="${taskID}"></div>
+    <button class='btn btn-outline-primary new-status-submit' disabled>Submit</button>
+
+    <p data-tunless="newStatus" class="system-msg">There's no Updated Status submitted</p>
+    <div class="card-text status-items status-newitems">
+        <div data-tloop="newStatus" class='status-new'>
+            <hr>
+            <div class='row'>
+                <div class="col-md-3 col-lg-2"><strong>${fnDateFormat(date)}</strong></div>
+                <div class="col-md-9 col-lg-10 report-status-detail" data-thtml>${text}</div>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Comments -->
+    <div id="report-item--{{task.uid}}-collapse" class="collapse" data-parent="#report-collapse-parent">
+        <p *ngIf='comments.length==0' class="system-msg">There's no Comment</p>
+        <!-- loop throught <input>.task.status as array -->
+        <div *ngFor="let comm of comments" class="card-text text-muted">
+            <hr>
+            <div class='row'>
+                <div class="col-md-3 col-lg-2 report-status-date"><strong>{{dateFormat(comm.at)}}</strong></div>
+                <div class="col-md-9 col-lg-10 report-status-detail" data-thtml>[{{comm.by}}] [{{comm.type}}] {{comm.text}}</div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+</div>

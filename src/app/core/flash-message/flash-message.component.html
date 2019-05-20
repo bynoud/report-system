@@ -1,0 +1,13 @@
+
+<div *ngFor="let type of msgTypes">
+  <div *ngIf="messages[type].msg" 
+    [className]="'message d-flex align-items-center ' + messages[type].class" role="alert">
+    <span>{{messages[type].msg}}</span>
+    <a class="ml-auto fas fa-times" data-toggle="tooltip" data-placement="left" title="Dismiss"
+      (click)="clearMsg(type)"></a>
+  </div>
+</div>  
+
+<div *ngIf="flashMsg" [className]="'message flash ' + flashMsg.class" role="alert">
+  {{flashMsg.msg}} Flash
+</div>

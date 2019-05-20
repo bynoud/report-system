@@ -1,0 +1,66 @@
+
+<div class="card">
+    <div class="card-header">NEW TASK</div>
+
+    <div class="card-body">
+
+        <form [formGroup]="taskForm" (ngSubmit)="newTask()"
+            >
+
+            <div class="form-row">
+                <div class="form-group col-md-2">
+                    <label for="project">Project</label>
+                    <input formControlName="project" type="text" class="form-control" id="project" 
+                        placeholder="BATCAVE" [class.is-invalid]="projectInvalid">
+                </div>
+
+                <div class="form-group col-md-10">
+                    <label for="title">Task's Title</label>
+                    <input formControlName="title" type="text" class="form-control" id="title"
+                        placeholder="Batman's secret identity" [class.is-invalid]="titleInvalid">
+                    <small class="form-text text-muted">Give it a short, consised name. Detail in Descriptions.</small>
+                </div>
+            </div>
+
+            <small *ngIf="projectInvalid" class="form-text text-danger">* Project name is required</small>
+            <small *ngIf="titleInvalid" class="form-text text-danger">* Task's Title is required</small>
+
+            <div class="form-group">
+                <label for="desc">Task's Descriptions</label>
+                <textarea formControlName="desc" class="form-control" id="desc" rows=3
+                    placeholder="It's not who I am underneath, but what I do that defines me."
+                    [class.is-invalid]="descInvalid"></textarea>
+            </div>
+            <small *ngIf="descInvalid" class="form-text text-danger">* Task's Descriptions is required</small>
+
+            <div class="form-group">
+                <label for="duedate">Due Date</label>
+                <input formControlName="duedate" type="date" class="form-control" id="duedate" >
+            </div>
+            
+            <div class="align-items-middle d-flex">
+                <label for="targets">Task's Targets</label>
+                <a class="fas fa-plus-square text-dark ml-auto pointer-size1-5" (click)="addTarget()"
+                    data-toggle="toottip" data-placement="left" title="Click to add new Target"></a>
+            </div>
+            <div class="form-group" formArrayName="targets" id="targets">
+                <div *ngFor="let target of taskForm.get('targets').controls; let i = index"
+                    [formGroupName]="i">
+
+                    <div class="input-group">
+                        <input type="text" formControlName="desc" class="form-control" 
+                            placeholder="{{getTargetPH(i)}}" [class.is-invalid]="targetInvalid(i)">
+                        <div class="input-group-append">
+                        <a class="fas fa-minus-square text-warning align-self-center pointer-size1-5" (click)="removeTarget(i)"
+                            data-toggle="toottip" data-placement="left" title="Click to remove this Target"></a>
+                        </div>
+                    </div>
+                    <small *ngIf="targetInvalid(i)" class="form-text text-danger">* Target can not be empty</small>
+
+                </div>
+            </div>
+
+            <button class="btn btn-info btn-lg" type="submit" [disabled]="!taskForm.valid">Submit</button>
+        </form>
+    </div>  
+</div>  

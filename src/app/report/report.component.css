@@ -1,0 +1,8 @@
+body {
+    /* light font */
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 400;
+
+    /* preserve for top navbar */
+    margin-top: 4rem;
+}
