@@ -14,6 +14,58 @@
     integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" 
     crossorigin="anonymous">
 
+  <style>
+    /* For loading animation */
+    .loading-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0; 
+      left: 0;
+      background-color: rgba(0,0,0,0.1); /* Black background with opacity */
+      z-index: 10; /* Specify a stack order in case you're using a different order for other elements */
+      cursor: wait;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .spinning-square {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .spinning-loader {
+      width: 70%;
+      height: 70%;
+      max-width: 150px;
+      max-height: 150px;
+      border: 5px solid rgba(29, 161, 242, 0.2);
+      border-left-color: rgb(29, 161, 242);
+      border-radius: 50%;
+      background: transparent;
+      animation-name: rotate-s-loader;
+      animation-iteration-count: infinite;
+      animation-duration: 1s;
+      animation-timing-function: linear;
+      position: relative;
+    }
+    /* .spinning-loader::after {
+      display: block;
+      content: "";
+      padding-right: 100%;
+    } */
+
+    @keyframes rotate-s-loader {
+      from {
+        transform: rotate(0);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+  </style>
+
 </head>
 <body>
   <app-root></app-root>

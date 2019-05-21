@@ -13,14 +13,10 @@ import { environment } from '../environments/environment';
 import { AppRoutingModule } from './app.routes';
 import { ReportModule } from './report/report.module';
 import { UserModule } from './user/user.module';
-import { LoadingComponent } from './core/loading/loading.component';
-import { LoadingBaseComponent } from './core/loading-base/loading-base.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    LoadingComponent,
-    LoadingBaseComponent,
   ],
   imports: [
     BrowserModule,
@@ -36,6 +32,6 @@ import { LoadingBaseComponent } from './core/loading-base/loading-base.component
   ],
   providers: [],
   bootstrap: [AppComponent],
-  entryComponents: [LoadingComponent]
+  entryComponents: []
 })
 export class AppModule {}

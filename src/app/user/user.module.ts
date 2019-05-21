@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FlashMessageModule } from '../core/flash-message/flash-message.module';
 import { UserRoutingModule } from './user.route';
+import { SharedModule } from '../core/shared.module';
 
 @NgModule({
     declarations: [
@@ -20,6 +21,7 @@ import { UserRoutingModule } from './user.route';
         ReactiveFormsModule,
         FlashMessageModule,
         UserRoutingModule,
+        SharedModule
     ]
 })
 export class UserModule {}

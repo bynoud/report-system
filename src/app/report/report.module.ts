@@ -11,6 +11,7 @@ import { TaskNewComponent } from './task-new/task-new.component';
 import { FlashMessageModule } from 'src/app/core/flash-message/flash-message.module';
 import { ReportSummaryDetailComponent } from './report-summary/report-summary-detail.component';
 import { ReportService } from './report.service';
+import { SharedModule } from '../core/shared.module';
 
 @NgModule({
   declarations: [
@@ -28,6 +29,7 @@ import { ReportService } from './report.service';
     ReactiveFormsModule,
     FlashMessageModule,
     ReportRoutingModule,
+    SharedModule
   ],
   providers: [ReportService]
 })

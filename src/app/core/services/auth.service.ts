@@ -4,8 +4,8 @@ import { Router, CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from
 import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFirestore } from '@angular/fire/firestore';
 
-import { Observable, of, Subject, BehaviorSubject } from 'rxjs';
-import { switchMap, first, map, mergeMap, catchError } from 'rxjs/operators';
+import { Observable, of, Subject, BehaviorSubject, ReplaySubject } from 'rxjs';
+import { switchMap, first, map, mergeMap, catchError, takeLast, concat } from 'rxjs/operators';
 import { User } from 'src/app/models/user';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 import { auth } from 'firebase';
@@ -16,7 +16,7 @@ import { auth } from 'firebase';
 export class AuthService implements CanActivate {
   // user$: Observable<User>;
   private fs: firebase.firestore.Firestore;
-  activeUser$ = new BehaviorSubject<User>(null);  // save the last user emited
+  private _activeUser$ = new ReplaySubject<User>(1);  // only replay the last value
   
   constructor(
     private afAuth: AngularFireAuth,
@@ -30,15 +30,23 @@ export class AuthService implements CanActivate {
         console.log("AUTH FB user", fbUser);
         if (fbUser) {
           this.fs.doc(`users/${fbUser.uid}`).get()
-            .then(user => this.activeUser$.next(<User>user.data()))
-            .catch(err => this.error(err))
+            .then(user => {
+              this._activeUser$.next(<User>user.data())
+            })
+            .catch(err => {
+              this._activeUser$.next(null)
+              this.error(err)
+            })
         } else {
-          this.activeUser$.next(null)
+          this._activeUser$.next(null)
         }
       })
     
     this.afAuth.auth.setPersistence(auth.Auth.Persistence.LOCAL);
-    
+  }
+
+  get activeUser$() {
+    return this._activeUser$
   }
 
   error(err: any) {
@@ -140,7 +148,7 @@ export class AuthService implements CanActivate {
   }
 
   emailLogin(email: string, password: string) {
-    return this.afAuth.auth.signInWithEmailAndPassword(email, password).catch(err => this.error("emaillogin"+err))
+    return this.afAuth.auth.signInWithEmailAndPassword(email, password).catch(err => this.error(err))
   }
 
   // private async oAuthLogin(provider) {

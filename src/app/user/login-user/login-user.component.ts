@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy, ViewContainerRef, ComponentFactoryResolver } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewContainerRef, ComponentFactoryResolver, EventEmitter } from '@angular/core';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { Router } from '@angular/router';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, Subject, BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'app-login-user',
@@ -18,17 +18,26 @@ export class LoginUserComponent implements OnInit, OnDestroy {
    }
 
   loginForm: FormGroup;
-  errorMsg = "";
   subs: Subscription[] = [];
+
+  loading$ = new BehaviorSubject<boolean>(true);
 
   ngOnInit() {
     this.subs.push(this.authService.activeUser$.subscribe(user => {
       console.log("user to redirect", user);
       if (user) this.router.navigate(['/'])
+      else {
+        this.loading$.next(false)
+      }
     }))
     this.createForm();
 
   }
+
+  delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
+  }
+
 
   ngOnDestroy() {
     this.subs.forEach(sub => sub.unsubscribe())
@@ -43,15 +52,8 @@ export class LoginUserComponent implements OnInit, OnDestroy {
 
   onLogin(){
     var value = this.loginForm.value;
-    this.errorMsg = "";
+    this.loading$.next(true);
     this.authService.emailLogin(value.email, value.password)
-      .then( uathUser => {
-        console.log("logged in", uathUser);
-      })
-      .catch( err => {
-        this.errorMsg = err;
-        console.log("login error", err);
-      })
   }
 
 }
