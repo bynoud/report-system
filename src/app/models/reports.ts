@@ -1,5 +1,6 @@
 
 import { firestore } from 'firebase';
+import { User } from './user';
 
 // Firestore structure
 // reports/     <collection>
@@ -46,7 +47,10 @@ import { firestore } from 'firebase';
 //     regions: firebase.firestore.FieldValue.arrayRemove("east_coast")
 // });
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 type Datetime = firestore.Timestamp;
+
 export type Status = "PENDING" | "ONGOING" | "SUSPENDED" | "DISCARDED" | "DONE";
 export const StatusList = ["PENDING", "ONGOING", "SUSPENDED", "DISCARDED", "DONE"];
 
@@ -57,9 +61,35 @@ export function nowTimestamp() { return firestore.Timestamp.now(); }
 export function nowMillis() { return firestore.Timestamp.now().toMillis(); }
 export function timestampToDate(t: firestore.Timestamp) { return t.toDate() }
 
+export function dateFormat(timestamp: firestore.Timestamp) {
+    var d = timestamp.toDate();
+    return d.toLocaleDateString('en-US', {day:'numeric', month:'short', year:'numeric'});
+}
+
+export function dateToSince(time: firestore.Timestamp | number | string) {
+    let now = new Date(nowMillis());
+    let ms: number;
+    if (typeof(time) == "string") {
+        ms = +time;
+    } else if (time instanceof firestore.Timestamp) {
+        ms = time.toMillis();
+    } else {
+        ms = time
+    }
+    let days = (ms - now.valueOf()) / DAY_MS;
+    let then = new Date(ms);
+
+    if (now.getFullYear() > then.getFullYear()) return "Years ago"
+    else if (now.getMonth() > then.getMonth()) return `${now.getMonth() - then.getMonth()} months ago`
+    else if (days > 7) return `${Math.floor(days/7)} weeks ago`
+    else if (days >= 1) return `${Math.floor(days)} days ago`
+    else return "Today"
+}
+
+
 export interface DueDate {
     readonly at : Datetime,
-    readonly by : string,
+    by : string | User,
     due : Datetime,
     readonly uid: string,
 }
@@ -70,10 +100,10 @@ export interface Target {
     readonly uid: string,
 }
 
-export type CommentType = "NewTarget" | "UpdateTarget" | "Redue" | "Comment" | "Close";
+export type CommentType = "NewTask" | "CloseTask" | "NewTarget" | "UpdateTarget" | "Redue" | "Comment" | "CloseTarget";
 export interface Comment {
     readonly at : Datetime,
-    readonly by : string,
+    by : string | User,
     readonly type: CommentType,
     text : string,
     readonly uid: string,

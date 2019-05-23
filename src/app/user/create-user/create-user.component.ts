@@ -3,6 +3,7 @@ import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms'
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
+import { Subject } from 'rxjs';
 
 const LOREM_PIXEL = [
   "animals", "cats", "food",
@@ -15,6 +16,8 @@ const LOREM_PIXEL = [
   styleUrls: ['./create-user.component.css']
 })
 export class CreateUserComponent implements OnInit {
+
+  loading$ = new Subject<boolean>();
 
   userForm: FormGroup;
   photoURL: string;
@@ -50,16 +53,23 @@ export class CreateUserComponent implements OnInit {
   }
 
   onSignup(){
-    var value = this.userForm.value;
+    const value = this.userForm.value;
+    this.loading$.next(true);
     this.authService.emailSignUp(value.name, value.email, this.photoURL, "", value.password)
     .then(
       _ => {
         // this.resetFields();
-        this.router.navigate(['./']);
-      }
-    )
-    .catch( err => {
-      this.msgService.error(err)
+        this.router.navigate(['/']);
+        this.msgService.info(`Account ${value.email} had been Created and Login.`, true)
+        this.loading$.next(false)
+      })
+    .catch(err => {
+      console.warn("SSS");
+      
+    })
+    .finally(() => {
+      console.warn("HEH");
+      
     })
   }
   

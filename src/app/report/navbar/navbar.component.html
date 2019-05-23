@@ -10,19 +10,21 @@
       <div class="collapse navbar-collapse w-100 dual-collapse2">
           <div *ngIf="user" class="navbar-nav mr-auto">
 
-              <a class="nav-item nav-link active mt-3 mt-md-0 mainnavbar-user-avatar"
+              <a class="nav-item nav-link active mt-3 mt-md-0 user-avatar"
                 [routerLink]="['./']"
                 [style.background-image]="'url(' + user.photoURL + ')'"
               ></a>
-              <a class="nav-item nav-link" [routerLink]="['./']">ME</a>
+              <a class="nav-item nav-link" [routerLink]="['./']">{{user.displayName.toUpperCase()}}</a>
 
               <div class="nav-item dropdown" dropdown>
                   <a class="nav-link dropdown-toggle" role="button" href="#" data-toggle="dropdown">
                       OTHERS <span class="caret"></span>
                   </a>
                   <div class="dropdown-menu">
-                      <a class="dropdown-item" *ngFor="let u of otherUsers"
-                          [routerLink]="['./', u.uid]">{{u.name}}</a>
+                      <a class="dropdown-item d-flex align-items-center" *ngFor="let u of otherUsers"
+                          [routerLink]="['./', u.uid]" >
+                        <span class="user-avatar mr-2" [style.background-image]="'url(' + u.photoURL + ')'"></span>
+                        {{u.displayName.toUpperCase()}}</a>
                   </div>
               </div>
 

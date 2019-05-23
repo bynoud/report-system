@@ -9,10 +9,8 @@ import { Subscription } from 'rxjs';
     templateUrl: "./report-summary-detail.component.html",
 })
 export class ReportSummaryDetailComponent implements OnInit, OnDestroy {
-    @Input() userID: string;
+    @Input() user: User;
     @Input() summary: ReportSummary[];
-    user: User;
-    subs: Subscription[] = [];
 
     constructor(
         private authService: AuthService,
@@ -20,14 +18,8 @@ export class ReportSummaryDetailComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.subs.push(this.authService.getUser$(this.userID, "from report sum detail").subscribe(user => {
-            this.user = user;
-            console.log("sumdetail", this.user);
-            
-        }))
     }
 
     ngOnDestroy() {
-        this.subs.forEach(sub => sub.unsubscribe())
     }
 }

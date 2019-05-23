@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { ReportService, ReportSummary } from '../report.service';
+import { ReportService, ReportSummary, ReportSummaries } from '../report.service';
 import { Subscription } from 'rxjs';
+import { User } from 'src/app/models/user';
 
 @Component({
   selector: 'app-report-summary',
@@ -9,8 +10,7 @@ import { Subscription } from 'rxjs';
 })
 export class ReportSummaryComponent implements OnInit {
 
-  summaries: {[uid: string]: ReportSummary[]};
-  ready = false;
+  summaries: ReportSummaries;
 
   constructor(
     private reportService: ReportService,
@@ -19,12 +19,7 @@ export class ReportSummaryComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.reportService.getSummary().then(sums => {
-      // this.summaries = tasks;
-      this.summaries = sums;
-      console.log("on report sum", this.summaries);
-      this.ready = true;
-    })
+    this.reportService.getSummary().then(sums => this.summaries = sums)
   }
 
   // groupByUser(tasks: Task[]) {

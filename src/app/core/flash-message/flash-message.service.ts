@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
 import { Router, NavigationStart } from '@angular/router';
 import { Subject } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, debounceTime, filter } from 'rxjs/operators';
 
-type FlashMessage = {msg: string, type: string, duration: number}
+type FlashMessage = {msg: string, class: string, duration: number}
 export type Message = {msg: string, type: string, class: string}
 
 @Injectable({providedIn: "root"})
@@ -13,7 +13,7 @@ export class FlashMessageService {
     // private flashMsg: FlashMessage
     private flashStart$ = new Subject<FlashMessage>();
     private messages$ = new Subject<Message>();
-    private msgFlash$ = new Subject<Message>();
+    private msgFlash$ = new Subject<FlashMessage>();
 
     private bsAlertClass = {
         info: "info",
@@ -21,6 +21,8 @@ export class FlashMessageService {
         error: "danger",
     }
     // private msgTypes = ["info", "warn", "error"]
+
+    private savedMsg = {};
 
     constructor(
         private router: Router
@@ -35,12 +37,21 @@ export class FlashMessageService {
     // getClass(type: string) { return this.bsAlertClass[type] }
 
     private subNavigationStart() {
-        this.router.events.subscribe(ev => {
+        this.router.events.pipe(
+            filter(ev => ev instanceof NavigationStart),
+            debounceTime(200)   // if navigation is too fast, probaly this is program de-tour
+        ).subscribe(ev => {
             // the message is cleared at navigation start
-            if (ev instanceof NavigationStart) {
-                console.log("srv nav", ev);
-                // this.msgs = {info:"", warn:"", error:""}
-                for (var k in this.bsAlertClass) {
+            console.error("srv nav", ev);
+            // this.msgs = {info:"", warn:"", error:""}
+            for (var k in this.bsAlertClass) {
+                if (this.savedMsg[k]) {
+                    console.log("this persist", k);
+                    // if it persist, re-emit that message
+                    this.sendMessage(this.savedMsg[k], k);
+                    delete this.savedMsg[k];
+                } else {
+                    console.log("this remove", k);
                     this.messages$.next({msg: "", type: k, class: ""})
                 }
             }
@@ -48,47 +59,45 @@ export class FlashMessageService {
     }
 
     private getClass(type: string) {
-        return "alert alert-" + this.bsAlertClass[type]
+        if (type in this.bsAlertClass) {
+            return "alert alert-" + this.bsAlertClass[type]
+        } else {
+            console.error(`Flash message type '${type}' is nout found`);
+            return "alert alert-danger"
+        }
     }
 
     private subFlashMessage() {
         this.flashStart$.pipe(
             // cancel previous sub, if new flash message is emitted
             switchMap(flash => {
-                this.msgFlash$.next({
-                    msg: flash.msg, 
-                    type: flash.type,
-                    class: this.getClass(flash.type)
-                });
+                this.msgFlash$.next(flash);
                 console.log("flash set", flash);
                 return new Promise( resolve => setTimeout(resolve, flash.duration) );
             })
         ).subscribe(() => {
-            this.msgFlash$.next({msg: "", type: "", class: ""})
+            this.msgFlash$.next({msg: "", class: "", duration: 0})
             console.log("flash clear");
          } )
     }
 
-    info(msg: string) { this.sendMessage(msg, 'info') }
-    warn(msg: string) { this.sendMessage(msg, 'warn') }
-    error(msg: string) { this.sendMessage(msg, 'error') }
+    // if 'persist' is set, this message survise 1 navigation event
+    info(msg: string, persist: boolean = false) { this.sendMessage(msg, 'info', persist) }
+    warn(msg: string, persist: boolean = false) { this.sendMessage(msg, 'warn', persist) }
+    error(msg: string, persist: boolean = false) { this.sendMessage(msg, 'error', persist) }
 
     flash(msg: string, type: string, durationMs: number = 2000) {
-        this.flashStart$.next({msg, type, duration: durationMs})
+        this.flashStart$.next({msg, class: this.getClass(type), duration: durationMs})
     }
 
     addMessageType(type: string, bsAlertClass: string) {
         this.bsAlertClass[type] = bsAlertClass;
     }
 
-    sendMessage(msg: string, type: string) {
-        if (!(type in this.bsAlertClass)) {
-            console.error(`Flash message type '${type}' is nout found`);
-        } else {
-            console.log("srv send", msg, type);
-            
-            this.messages$.next({msg, type, class: this.getClass(type)})
-        }
+    sendMessage(msg: string, type: string, persist: boolean = false) {
+        console.warn("srv send", msg, type);
+        if (persist) this.savedMsg[type] = msg;
+        this.messages$.next({msg, type, class: this.getClass(type)})
     }
 
     clearMessage(type: string) {
@@ -97,12 +106,12 @@ export class FlashMessageService {
         }
     }
 
-    onMessageChanged(cb: (msg: Message) => void) {
-        this.messages$.subscribe(cb)
+    onMessageChanged$() {
+        return this.messages$
     }
 
-    onFlashChanged(cb: (msg: Message) => void) {
-        this.msgFlash$.subscribe(cb)
+    onFlashChanged$() {
+        return this.msgFlash$
     }
 
 

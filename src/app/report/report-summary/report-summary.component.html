@@ -1,14 +1,13 @@
-<p>sum report</p>
 
-<p *ngIf="!ready">Loading...</p>
+<p *ngIf="summaries==null"><app-loading></app-loading></p>
 
-<!-- <div *ngIf="ready"> -->
+<div *ngIf="summaries!=null">
   <h5 *ngIf="!summaries">There's no update in last 7 days</h5>
   <!-- <div class="card" *ngFor="let tasks of summaries | keyvalue">
     <div class="card-header">{{tasks.key}}</div>
     <app-task-detail *ngFor="let task of tasks.value" [task]="task"></app-task-detail>
   </div> -->
-  <app-report-summary-detail *ngFor="let sums of summaries | keyvalue"
-    [userID]="sums.key" [summary]="sums.value"></app-report-summary-detail>
+  <app-report-summary-detail *ngFor="let sum of summaries | keyvalue"
+    [user]="sum.value.user" [summary]="sum.value.sums"></app-report-summary-detail>
   
-<!-- </div> -->
+</div>

@@ -28,22 +28,30 @@ export class ReportUserComponent implements OnInit, OnDestroy {
       var userID = params['id'];
       console.log("detal id", userID);
 
-      var user$ = userID ? this.authService.getUser$(userID, "from report user") :
-                           this.authService.activeUser$;
+      if (userID) {
+        this.authService.getUser$(userID).then(user => this.getTasks(user))
+      } else {
+        this.subs.push(this.authService.activeUser$.subscribe(user => this.getTasks(user)))
+      }
 
-      this.subs.push(user$.subscribe(user => {
-        console.log("detail user", user);          
-        this.user = user;
-        if (user) {
-          this.subs.push(this.reportService.onTaskChanged$(user.uid).subscribe(tasks => {
-            this.tasks = tasks;
-          }))
-        } else {
-          this.tasks = [];
-        }
-      }))
     }))
   }
+
+  delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
+  }
+
+  getTasks(user: User) {
+    this.user = user;
+    if (user) {
+      this.subs.push(this.reportService.onTaskChanged$(user.uid).subscribe(tasks => {
+        this.tasks = tasks;
+      }))
+    } else {
+      this.tasks = [];
+    }
+  }
+
 
   ngOnDestroy() {
     console.log("destroy");

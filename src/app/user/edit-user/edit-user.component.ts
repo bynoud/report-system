@@ -40,13 +40,13 @@ export class EditUserComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.subs.push(this.route.params.subscribe( params => {
       var userID = params['id']; //['userID'];
-      this.subs.push(this.authService.getUser$(userID, "from edit user")
-      .subscribe(
+      this.authService.getUser$(userID, "from edit user")
+      .then(
         user => {
           this.user = user;
           this.createForm();
         }
-      ))
+      )
     }))
     // this.route.data.subscribe(routeData => {
     //   let data = routeData['userID'];

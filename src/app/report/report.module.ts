@@ -12,6 +12,7 @@ import { FlashMessageModule } from 'src/app/core/flash-message/flash-message.mod
 import { ReportSummaryDetailComponent } from './report-summary/report-summary-detail.component';
 import { ReportService } from './report.service';
 import { SharedModule } from '../core/shared.module';
+import { CommentComponent } from './comment/comment.component';
 
 @NgModule({
   declarations: [
@@ -22,6 +23,7 @@ import { SharedModule } from '../core/shared.module';
     NavbarComponent,
     TaskDetailComponent,
     TaskNewComponent,
+    CommentComponent,
   ],
   imports: [
     CommonModule,

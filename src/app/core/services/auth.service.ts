@@ -5,7 +5,7 @@ import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFirestore } from '@angular/fire/firestore';
 
 import { Observable, of, Subject, BehaviorSubject, ReplaySubject } from 'rxjs';
-import { switchMap, first, map, mergeMap, catchError, takeLast, concat } from 'rxjs/operators';
+import { switchMap, first, map, mergeMap, catchError, takeLast, concat, take } from 'rxjs/operators';
 import { User } from 'src/app/models/user';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 import { auth } from 'firebase';
@@ -17,6 +17,11 @@ export class AuthService implements CanActivate {
   // user$: Observable<User>;
   private fs: firebase.firestore.Firestore;
   private _activeUser$ = new ReplaySubject<User>(1);  // only replay the last value
+  private _authUserChanged$ = new ReplaySubject<boolean>(1);
+
+  private _users$: {[s: string]: User} = {};
+
+  private deb: {curFn: ""};
   
   constructor(
     private afAuth: AngularFireAuth,
@@ -30,39 +35,54 @@ export class AuthService implements CanActivate {
         console.log("AUTH FB user", fbUser);
         if (fbUser) {
           this.fs.doc(`users/${fbUser.uid}`).get()
-            .then(user => {
-              this._activeUser$.next(<User>user.data())
-            })
+            .then(user => this.userChange(<User>user.data()))
             .catch(err => {
-              this._activeUser$.next(null)
+              this.userChange(null)
               this.error(err)
             })
         } else {
-          this._activeUser$.next(null)
+          this.userChange(null)
         }
       })
     
     this.afAuth.auth.setPersistence(auth.Auth.Persistence.LOCAL);
   }
 
+  private userChange(user: User) {
+    this._activeUser$.next(user)
+    this._authUserChanged$.next(user ? true : false);
+  }
+
+  onLoginChanged$() {
+    return this._authUserChanged$;
+  }
+
   get activeUser$() {
-    return this._activeUser$
+    return this._activeUser$.pipe(first())
   }
 
   error(err: any) {
     this.msgService.error(err);
-    console.error(err);
-    return Promise.resolve(null);
+    console.error("X",err);
+    // console.trace();
+    return Promise.reject(err);
+  }
+
+  errorPromise(err: any) {
+    this.msgService.error(err);
+    console.error("errpromise",err);
+    throw (err);
   }
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-    return this.activeUser$.pipe(
+    return this._authUserChanged$.pipe(
+      take(1),
       map(user => {
         if (user) {
           return true
         } else {
           this.router.navigate(['/'])
-          this.msgService.error("Login is required")
+          this.msgService.error("Login is required", true)
         }
         return false
       })
@@ -105,20 +125,36 @@ export class AuthService implements CanActivate {
 
   // getActiveUser(): Promise<firebase.User> { return this.activeUser$.toPromise(); }
 
-  getUsers$(): Observable<User[]> {
-    return this.afs.collection<User>('users').valueChanges().pipe(
-      catchError(err => this.error("getusers "+err))
-    )
+  getUsers$(): Promise<User[]> {
+    // return this.afs.collection<User>('users').valueChanges().pipe(
+    //   take(1),
+    //   catchError(err => this.error("getusers "+err))
+    // ).toPromise();
+    return this.fs.collection('users').get()
+      .then(snaps => {
+        return snaps.docs.map(userSS => <User>userSS.data() )
+      })
+      .catch(err => this.error(err))
   }
 
   // getUsers(): Promise<User[]> {
   //   return this.afs.collection<User>('users').valueChanges().toPromise();
   // }
 
-  getUser$(uid: string, deb: string): Observable<User> {
-    return this.afs.doc<User>(`users/${uid}`).valueChanges().pipe(
-      catchError(err => this.error(`getuserXX [${deb}]`+err))
-    )
+  getUser$(uid: string, deb: string = ""): Promise<User> {
+    // return this.afs.doc<User>(`users/${uid}`).valueChanges().pipe(
+    //   catchError(err => this.error(`getuserXX [${deb}]`+err))
+    // )
+    if (this._users$[uid]) {
+      return Promise.resolve(this._users$[uid]);
+    } else {
+      return this.fs.doc(`users/${uid}`).get()
+        .then(snaps => {
+          this._users$[uid] = <User>snaps.data();
+          return this._users$[uid];
+        })
+        .catch(err => this.error(err))
+    }
   }
 
   // getUser(uid: string): Promise<User> {
@@ -144,7 +180,7 @@ export class AuthService implements CanActivate {
 
   private createUser(user: User): Promise<void> {
     if (!user.managerID) user.managerID = "";
-    return this.afs.doc<User>(`users/${user.uid}`).set(user).catch(err => this.error("createuser"+err))
+    return this.afs.doc<User>(`users/${user.uid}`).set(user).catch(err => this.error(err))
   }
 
   emailLogin(email: string, password: string) {

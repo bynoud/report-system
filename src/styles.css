@@ -6,3 +6,31 @@ body {
   /* preserve for top navbar */
   margin-top: 4rem !important;
 }
+
+.user-avatar {
+  /* fill the container, preserving aspect ratio, and cropping to fit */
+  background-size: cover;
+  /* center the image vertically and horizontally */
+  background-position: top center;
+  /* round the edges to a circle with border radius 1/2 container size */
+  border-radius: 50%;
+}
+
+a.user-avatar {
+  /* make a square container */
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+span.user-avatar {
+  width: 2rem;
+  height: 2rem;
+  display: inline-block;
+}
+
+.text-system {
+  color: var(--gray);
+  font-style: italic;
+  font-weight: 300;
+  
+}

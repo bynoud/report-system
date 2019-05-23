@@ -1,5 +1,8 @@
 
-<div class="card" [appLoadingBy]="loading$" >
+
+<button class="d-none" (click)="toggleLoading()">Click me</button>
+
+<div class="card" [appLoadingBy]="loading$" id="login-user-card">
     <div class="card-header">
         SIGN IN
     </div>

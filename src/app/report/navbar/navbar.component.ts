@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { User } from 'src/app/models/user';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
@@ -11,7 +11,9 @@ import { Subscription } from 'rxjs';
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   user: User;
+  otherUsers: User[] = [];
   subs: Subscription[] = [];
+  loading$: BehaviorSubject<boolean>[] = [];
 
   constructor(
     private router: Router,
@@ -19,7 +21,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    this.subs.push(this.authService.activeUser$.subscribe(user => this.user = user))
+    this.subs.push(this.authService.activeUser$.subscribe(user => {
+      this.user = user;
+      this.authService.getUsers$().then( users => {
+        this.otherUsers = users.filter(user => user.uid != this.user.uid);
+      });
+    }));
+
   }
 
   onLogout() {

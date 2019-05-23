@@ -7,10 +7,12 @@ import { AuthService } from 'src/app/core/services/auth.service';
 import { map, catchError } from 'rxjs/operators';
 import { Observable, Subscription } from 'rxjs';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
+import { User } from '../models/user';
 
 const SUMMARY_SINCE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type ReportSummary = {task: Task, comms: Comment[]}
+export type ReportSummaries = {[uid: string]: {user: User, sums: ReportSummary[]}}
 
 @Injectable()
 export class ReportService implements OnDestroy {
@@ -62,8 +64,18 @@ export class ReportService implements OnDestroy {
         return sub
     }
 
+    // populate the sub-collection fields: dueDates.by, comment.by
+    private async populateComment(obj: Comment) {
+        if (typeof(obj.by) == "string") obj.by = await this.authService.getUser$(obj.by);
+        return obj;
+    }
+    private async populateDuedate(obj: DueDate) {
+        if (typeof(obj.by) == "string") obj.by = await this.authService.getUser$(obj.by);
+        return obj;
+    }
+
     // Gather comment in last 7 days, group by user
-    async getSummary(): Promise<{[uid:string]: ReportSummary[]}> {
+    async getSummary(): Promise<ReportSummaries> {
         var sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
         const taskSnaps = await this.fs.collectionGroup('tasks')
             .where('updatedAt', ">", sinceDate).orderBy("updatedAt", "desc").get()
@@ -71,22 +83,26 @@ export class ReportService implements OnDestroy {
         if (!taskSnaps) return Promise.resolve({})
 
         // console.log("sum", taskSnaps);
-        var sums: {[uid: string]: ReportSummary[]} = {};
+        var sums: ReportSummaries = {};
         for (const doc of taskSnaps.docs) {
-            var sum = {task: <Task>doc.data(), comms: []};
-            var userID = sum.task.userID;
+            let sum: ReportSummary = {task: <Task>doc.data(), comms: []};
+            let uid = sum.task.userID;
 
             const comSnaps = await doc.ref.collection('comments')
                 .where('at', '>', sinceDate).orderBy('at', 'desc').get()
                 //FIXME .catch(err => this.error(err))
             if (comSnaps) {
                 // console.log("  comm", comSnaps);
-                comSnaps.forEach(doc => sum.comms.push(<Comment>doc.data()))
-                if (!(userID in sums)) sums[userID] = [];
-                sums[userID].push(sum)
+                for (let doc of comSnaps.docs) {
+                    sum.comms.push(await this.populateComment(<Comment>doc.data()))
+                }
+                if (!(uid in sums)) sums[uid] = {
+                    user: await this.authService.getUser$(uid),
+                    sums: [],
+                };
+                sums[uid].sums.push(sum)
             }
         }
-        console.log("summ",sums);
         
         return sums;
     }
@@ -114,6 +130,7 @@ export class ReportService implements OnDestroy {
             bw.set(this.fs.collection(`${taskdoc}/targets`).doc(), target)
         })
         this.addDuedate(taskdoc, dueMs, bw);
+        this.addComm(task, "NewTask", `${task.uid}@@${project}@@${title}`, bw)
         return bw.commit().then(() => { return task })
             // FIXME .catch(err => this.error(err))
     }
@@ -131,7 +148,7 @@ export class ReportService implements OnDestroy {
         var bw = this.fs.batch();
         bw.update(this.fs.doc(taskdoc), {'due': fromMillis(dueMs)});
         this.addDuedate(taskdoc, dueMs, bw)
-        this.addComm(task, "Redue", `${dueMs}`, bw)
+        this.addComm(task, "Redue", `${task.due.toMillis()}@@${dueMs}`, bw)
         return bw.commit()//FIXME .catch(err => this.error(err))
     }
 
@@ -141,15 +158,15 @@ export class ReportService implements OnDestroy {
         var path = `reports/${task.userID}/tasks/${task.uid}/targets`;
         var taskref = this.fs.collection(path).doc();
         bw.update(taskref, {uid: taskref.id, desc, status})
-        this.addComm(task, "NewTarget", `[${taskref.id}][${status}]`, bw)
+        this.addComm(task, "NewTarget", `${taskref.id}@@${status}@@${desc}`, bw)
         return bw.commit()//FIXME .catch(err => this.error(err))
     }
 
-    targetStatus(task: Task, targetID: string, status: Status) {
+    targetStatus(task: Task, target: Target, status: Status) {
         var bw = this.fs.batch();
-        var taskref = this.fs.doc(`reports/${task.userID}/tasks/${task.uid}/targets/${targetID}`);
+        var taskref = this.fs.doc(`reports/${task.userID}/tasks/${task.uid}/targets/${target.uid}`);
         bw.update(taskref, {status})
-        this.addComm(task, "UpdateTarget", `[${targetID}][${status}]`, bw);
+        this.addComm(task, "UpdateTarget", `${target.uid}@@${target.desc}@@${target.status}@@${status}`, bw);
         return bw.commit()//FIXME .catch(err => this.error(err))
     }
 
@@ -158,8 +175,7 @@ export class ReportService implements OnDestroy {
     }
 
     closeTask(task: Task) {
-        var now = nowMillis();
-        return this.addComm(task, "Close", `${now}`);
+        return this.addComm(task, "CloseTask", `${nowMillis()}`);
     }
 
     private addComm(task: Task, type: CommentType, text: string,
@@ -178,7 +194,7 @@ export class ReportService implements OnDestroy {
         })
         // assume a comment is added mean task still open
         batch.update(this.fs.doc(taskdoc), {updatedAt: nowTimestamp(),
-            status: (type=="Close")? "CLOSED" : "OPEN"})
+            status: (type=="CloseTask")? "CLOSED" : "OPEN"})
         if (doCommit) return batch.commit()//FIXME .catch(err => this.error(err))
         else return null
     }

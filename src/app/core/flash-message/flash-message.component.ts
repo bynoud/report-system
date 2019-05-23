@@ -1,16 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FlashMessageService } from './flash-message.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-flash-message',
   templateUrl: './flash-message.component.html',
   styleUrls: ['./flash-message.component.css']
 })
-export class FlashMessageComponent implements OnInit {
+export class FlashMessageComponent implements OnInit, OnDestroy {
 
   messages: {[type: string]: {msg: string, class: string}} = {};
   flashMsg: {msg: string, class: string};
   msgTypes: string[] = []
+
+  subs: Subscription[] = [];
 
   index = 0;
 
@@ -20,15 +23,21 @@ export class FlashMessageComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.srv.onFlashChanged(msg => {
+    this.subs.push(this.srv.onFlashChanged$().subscribe(msg => {
       this.flashMsg = msg.msg ? {msg: msg.msg, class: msg.class} : null;
-    })
-    this.srv.onMessageChanged(msg => {
+    }))
+    this.subs.push(this.srv.onMessageChanged$().subscribe(msg => {
+      console.warn("msg comp receive", msg);
+      
       if (this.msgTypes.indexOf(msg.type) < 0) {
         this.msgTypes.push(msg.type)
       }
       this.messages[msg.type] = {msg: msg.msg, class: msg.class};
-    })
+    }))
+  }
+
+  ngOnDestroy() {
+    this.subs.forEach(sub => sub.unsubscribe())
   }
 
   clearMsg(type: string) {

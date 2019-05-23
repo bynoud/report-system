@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, OnDestroy } from '@angular/core';
-import { Task, Comment, DueDate, Target, nowMillis, Status, StatusList } from 'src/app/models/reports';
+import { Task, Comment, DueDate, Target, nowMillis, Status, StatusList, dateFormat } from 'src/app/models/reports';
 import { ReportService } from '../report.service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
@@ -193,12 +193,11 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
   }
 
   submitTargetStatus(target: Target, stt: Status) {    
-    this.reportService.targetStatus(this.task, target.uid, stt)
+    this.reportService.targetStatus(this.task, target, stt)
   }
 
   dateFormat(timestamp: firebase.firestore.Timestamp) {
-    var d = timestamp.toDate();
-    return d.toLocaleDateString('en-US', {day:'numeric', month:'short', year:'numeric'});
+    return dateFormat(timestamp)
   }
 
   ngOnDestroy() {

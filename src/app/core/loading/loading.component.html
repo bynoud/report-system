@@ -1,0 +1,41 @@
+
+<div class="loading-container">
+  <div class="spinning-square" [style.width]="size" [style.height]="size">
+    <div class="spinning-loader"></div>
+  </div>
+</div>
+
+<!-- 
+createLoadingElement() {
+  this.nativeEle.style.position = 'relative';
+  
+  const loadingEle = document.createElement("div");
+  loadingEle.style.display = "none";
+  loadingEle.className = "loading-container";
+
+
+  const spinDiv = document.createElement("div");
+  spinDiv.className = "spinning-square";
+  const size = Math.min(this.nativeEle.offsetWidth, this.nativeEle.offsetHeight);
+  spinDiv.style.width = `${size}px`;
+  spinDiv.style.height = `${size}px`;
+
+  const spinning = document.createElement("div");
+  spinning.className = "spinning-loader";
+  // spinning.style.width = `${size}px`;
+  // spinning.style.height = `${size}px`;
+  
+  spinDiv.appendChild(spinning);
+  loadingEle.appendChild(spinDiv);
+  this.nativeEle.appendChild(loadingEle);
+
+  return loadingEle;
+}
+
+showLoading() {
+  this.loadingEle.style.display = "flex";
+  if (this.tagName == "button") {
+    this.savedStates['disabled'] = this.nativeEle.disabled;
+    this.nativeEle.disabled = true;
+  }
+} -->

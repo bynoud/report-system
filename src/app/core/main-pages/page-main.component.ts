@@ -17,7 +17,7 @@ export class PageMainComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.subs.push(this.authService.activeUser$.subscribe(user => {
+    this.subs.push(this.authService.onLoginChanged$().subscribe(user => {
       console.log("app to redirect", user);
       if (user) this.router.navigate(['/report'])
       else this.router.navigate(['/user'])

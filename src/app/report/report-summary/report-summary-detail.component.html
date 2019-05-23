@@ -1,16 +1,24 @@
-<p>report sum detail</p>
 
 <div class="card">
-    <p *ngIf="!user">Loading...</p>
-    <div *ngIf="user" class="card-header">{{user.displayName}}</div>
-    <div *ngFor="let sum of summary">
-      <p>{{sum.task.title}}</p>
-      <div *ngFor="let com of sum.comms">
-        <hr>
-        <p>{{com.at}}</p>
-        <p>{{com.by}}</p>
-        <p>{{com.type}}</p>
-        <p>{{com.text}}</p>
-      </div>
+    <div class="card-header d-flex align-items-center">
+      <span class="user-avatar mr-2" [style.background-image]="'url(' + user.photoURL + ')'"></span>
+      <strong>{{user.displayName}}'s updates within 7 days      
+      <a [routerLink]="['../', user.uid]">Click for detail...</a></strong>
     </div>
+
+    <ul class="list-group list-group-flush">
+
+        <li *ngFor="let sum of summary" class="list-group-item">
+          <strong>[{{sum.task.project.toUpperCase()}}] {{sum.task.title}}</strong>
+          <div *ngFor="let com of sum.comms">
+            <app-comment [comm]="com" [task]="sum.task"></app-comment>
+            <!-- <hr>
+            <p>{{com.at}}</p>
+            <p>{{com.by}}</p>
+            <p>{{com.type}}</p>
+            <p>{{com.text}}</p> -->
+          </div>
+        </li>
+    </ul>
+
   </div>

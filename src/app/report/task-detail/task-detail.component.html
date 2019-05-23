@@ -87,14 +87,15 @@
 
     <!-- Comments -->
     <div id="report-item--{{task.uid}}-collapse" class="collapse" data-parent="#report-collapse-parent">
-        <p *ngIf='comments.length==0' class="system-msg">There's no Comment</p>
+        <p *ngIf='comments.length==0' class="text-system">There's no Comment</p>
         <!-- loop throught <input>.task.status as array -->
-        <div *ngFor="let comm of comments" class="card-text text-muted">
-            <hr>
+        <div *ngFor="let comm of comments" class="card-text">
+          <app-comment [task]="task" [comm]="comm"></app-comment>
+            <!-- <hr>
             <div class='row'>
                 <div class="col-md-3 col-lg-2 report-status-date"><strong>{{dateFormat(comm.at)}}</strong></div>
-                <div class="col-md-9 col-lg-10 report-status-detail" data-thtml>[{{comm.by}}] [{{comm.type}}] {{comm.text}}</div>
-            </div>
+                <div class="col-md-9 col-lg-10 report-status-detail">[{{comm.by}}] [{{comm.type}}] {{comm.text}}</div>
+            </div> -->
         </div>
     </div>
   </div>
