@@ -2,7 +2,8 @@ import { Component, OnInit, Input } from '@angular/core';
 import { FormGroup, Validators, FormBuilder, FormArray } from '@angular/forms';
 import { ReportService } from '../report.service';
 import { AuthService } from 'src/app/core/services/auth.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 
 const TARGETS_PH = [
   "Defeat Superman",
@@ -18,11 +19,14 @@ const TARGETS_PH = [
   styleUrls: ['./task-new.component.css']
 })
 export class TaskNewComponent implements OnInit {
-  userID: string;  
+  userID: string;
+  returnURL: string;
+  loading$ = new BehaviorSubject<boolean>(false);
 
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
+    private router: Router,
     private reportService: ReportService,
     private authService: AuthService
   ) { }
@@ -30,8 +34,11 @@ export class TaskNewComponent implements OnInit {
   taskForm: FormGroup;
 
   ngOnInit() {
-    this.route.params.subscribe(params => {
-      this.userID = params['id'];
+    this.route.paramMap.subscribe(params => {
+      this.userID = params.get('id');
+      this.returnURL = params.get('return') || '/report';
+      console.log(this.userID, this.returnURL);
+      
     })
     this.createForm();
   }
@@ -91,13 +98,16 @@ export class TaskNewComponent implements OnInit {
   }
 
   newTask() {
+    this.loading$.next(true);
     var value = this.taskForm.value;
     value.dueMs = Date.parse(value.duedate);  // YYYY-MM-DD
-    value.targets.forEach(tgr => {
-      tgr.status = "PENDING";
-    });
+    // value.targets.forEach(tgr => {
+    //   tgr.status = "PENDING";
+    // });
     console.log("newtask", value);
     this.reportService.addTask(this.userID, value)
+      .then(_ => this.router.navigate([this.returnURL]))
+      .catch(err => this.loading$.next(false))
   }
 
 

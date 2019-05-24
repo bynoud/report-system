@@ -11,8 +11,8 @@ const routes: Routes = [{
     children: [
         {path: '', component: ReportUserComponent},
         {path: 'sum', component: ReportSummaryComponent},
+        {path: 'new', component: TaskNewComponent},
         {path: ':id', component: ReportUserComponent},
-        {path: ':id/new', component: TaskNewComponent},
     ]
 }]
 

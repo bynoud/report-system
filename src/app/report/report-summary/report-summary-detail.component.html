@@ -11,7 +11,7 @@
         <li *ngFor="let sum of summary" class="list-group-item">
           <strong>[{{sum.task.project.toUpperCase()}}] {{sum.task.title}}</strong>
           <div *ngFor="let com of sum.comms">
-            <app-comment [comm]="com" [task]="sum.task"></app-comment>
+            <app-report-comment [comm]="com" [task]="sum.task"></app-report-comment>
             <!-- <hr>
             <p>{{com.at}}</p>
             <p>{{com.by}}</p>

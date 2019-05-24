@@ -17,7 +17,8 @@ export class AuthService implements CanActivate {
   // user$: Observable<User>;
   private fs: firebase.firestore.Firestore;
   private _activeUser$ = new ReplaySubject<User>(1);  // only replay the last value
-  private _authUserChanged$ = new ReplaySubject<boolean>(1);
+  private _activeFBUser$ = new ReplaySubject<firebase.User>(1);
+  private _authUserChanged$ = new Subject<boolean>();
 
   private _users$: {[s: string]: User} = {};
 
@@ -34,27 +35,39 @@ export class AuthService implements CanActivate {
     this.afAuth.authState.subscribe(fbUser => {
         console.log("AUTH FB user", fbUser);
         if (fbUser) {
+          // if (!fbUser.emailVerified) {
+          //   this.userChange(null, fbUser);
+          // } else {
           this.fs.doc(`users/${fbUser.uid}`).get()
-            .then(user => this.userChange(<User>user.data()))
+            .then(user => this.userChange(<User>user.data(), fbUser))
             .catch(err => {
-              this.userChange(null)
+              this.userChange(null, fbUser)
               this.error(err)
             })
         } else {
-          this.userChange(null)
+          this.userChange(null, null)
         }
       })
     
     this.afAuth.auth.setPersistence(auth.Auth.Persistence.LOCAL);
   }
 
-  private userChange(user: User) {
+  private userChange(user: User, fbUser: firebase.User) {
     this._activeUser$.next(user)
     this._authUserChanged$.next(user ? true : false);
+    this._activeFBUser$.next(fbUser)
+  }
+
+  onUserChanged$() {
+    return this._activeUser$;
   }
 
   onLoginChanged$() {
-    return this._authUserChanged$;
+    return this._activeUser$.pipe(map(user => user!=null))
+  }
+
+  waitLoginChanged$() {
+    return this._authUserChanged$.pipe(take(1));
   }
 
   get activeUser$() {
@@ -75,14 +88,20 @@ export class AuthService implements CanActivate {
   }
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-    return this._authUserChanged$.pipe(
+    return this._activeFBUser$.pipe(
       take(1),
       map(user => {
-        if (user) {
-          return true
-        } else {
+        if (user == null) {
           this.router.navigate(['/'])
           this.msgService.error("Login is required", true)
+        } else {
+          return true;
+          // if (user.emailVerified) {
+          //   return true;
+          // } else  {
+          //   this.msgService.error(`Email ${user.email} is registered, but has not been verified.`);
+          //   this.router.navigate(['./activate', user.email]);
+          // }
         }
         return false
       })
@@ -197,7 +216,11 @@ export class AuthService implements CanActivate {
   }
 
   signOut() {
-    return this.afAuth.auth.signOut().catch(err => this.error(err))
+    return this.afAuth.auth.signOut()
+      .then(() => {
+        return this.waitLoginChanged$().toPromise();
+      })
+      .catch(err => this.error(err))
     // return this.router.navigate(['/']);
   }
 

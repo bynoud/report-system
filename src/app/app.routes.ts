@@ -15,8 +15,6 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [
-    PageMainComponent,
-    PageNotfoundComponent,
   ],
   imports: [RouterModule.forRoot(routes)], //, {enableTracing: true})],
   exports: [RouterModule]

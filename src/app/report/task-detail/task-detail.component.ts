@@ -3,7 +3,7 @@ import { Task, Comment, DueDate, Target, nowMillis, Status, StatusList, dateForm
 import { ReportService } from '../report.service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
+import { Subscription, BehaviorSubject } from 'rxjs';
 
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
 const WARN_PERIOD = 3;  // issue warning before 3 days
@@ -11,65 +11,31 @@ const WARN_PERIOD = 3;  // issue warning before 3 days
 const STATUS_CFGS: {[s:string]: {desc: string, icon: string, color: string}} = {
   "DONE": {
     desc: "This Task was finished",
-    icon: "fa-info-circle", 
+    icon: "fas fa-check-circle", 
     color: 'var(--success)'
   },
   "OK": {
     desc: "This Task is going well",
-    icon: "fa-info-circle", 
-    color: 'var(--success)'
+    icon: "fas fa-info-circle", 
+    color: 'var(--info)'
   },
   "WARNING": {
     desc: "",  // add you explanation here
-    icon: "fa-exclamation-circle", 
+    icon: "fas fa-exclamation-circle", 
     color: 'var(--warning)'
   },
   "CRITICAL": {
     desc: "This Task is overdue",
-    icon: "fa-exclamation-triangle", 
+    icon: "fas fa-exclamation-triangle", 
     color: 'var(--danger)'
   },
   "SUSPENED": {
     desc: "This Task was suspended",
-    icon: "fa-exclamation-triangle",
+    icon: "fas fa-pause-circle",
     color: 'var(--gray)'
   },
 }
 
-const TARGET_CFGS: {[s: string]: {icon: string, desc: string, next: Status[]}} = {
-  PENDING: {
-    icon: "fas fa-hourglass-start",
-    desc: "This Target is not started",
-    next: ["ONGOING", "SUSPENDED", "DISCARDED"],
-  },
-  ONGOING: {
-    icon: "fas fa-play",
-    desc: "This Target is active",
-    next: ["SUSPENDED", "DISCARDED", "DONE"],
-  },
-  SUSPENDED: {
-    icon: "fas fa-pause",
-    desc: "This Target has been suspended",
-    next: ["ONGOING", "DISCARDED"],
-  },
-  DISCARDED: {
-    icon: "fas fa-trash-alt",
-    desc: "This Target was removed",
-    next: ["ONGOING"],
-  },
-  DONE: {
-    icon: "fas fa-check",
-    desc: "This Target was finished",
-    next: ["ONGOING"]
-  }
-}
-
-const NEXT_TARGET_DESC = {
-  ONGOING: " this Target",  // 'Start'/'Resume'/"Re-open"
-  SUSPENDED: "Suspend this Target with reason ...",
-  DISCARDED: "Removed this Target with reason ...",
-  DONE: "Mark this Target as Finished with comment ...",
-}
 
 @Component({
   selector: 'app-task-detail',
@@ -78,8 +44,16 @@ const NEXT_TARGET_DESC = {
 })
 export class TaskDetailComponent implements OnInit, OnDestroy {
   @Input() task: Task;
+  @Input() index: number;
+
   comments: Comment[] = [];
+  nextCommentsFn: () => Promise<boolean>;
+  commUnsubFn: () => void;
+  isLastComment: boolean;
+
   duedates: DueDate[] = [];
+  loadingRedue$ = new BehaviorSubject<boolean>(false);
+
   targets: Target[] = [];
   subs: Subscription[] = [];
 
@@ -105,18 +79,21 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    this.subs.push(this.reportService.onCommentsChanged$(this.task).subscribe(comments => {
-        this.comments = comments;
-        this.updateStatus();
-      }))
+    // this.subs.push(this.reportService.onCommentsChanged$(this.task).subscribe(comments => {
+    //     this.comments = comments;
+    //     this.updateStatus();
+    //   }))
+    console.log("init task", this.index);
+    
     this.subs.push(this.reportService.onTargetsChanged$(this.task).subscribe(targets => {
-        this.targets = targets
-        this.updateStatus();
-      }))
+      this.targets = targets
+      this.updateStatus();
+    }))
     this.subs.push(this.reportService.onDuedatesChanged$(this.task).subscribe(duedates => {
-        this.duedates = duedates
-        this.updateStatus();
-      }))
+      duedates.shift(); // dont show current duedate
+      this.duedates = duedates
+      this.updateStatus();
+    }))
 
     this.createForm();
   }
@@ -153,27 +130,10 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
       icon: cfg.icon,
       iconColor: this.sanitizer.bypassSecurityTrustStyle(cfg.color)
     };
+    console.log("target", this.targets);
+    
   }
 
-  getTargetIcon(target: Target) {
-    return this.sanitizer.bypassSecurityTrustStyle(TARGET_CFGS[target.status].icon)
-  }
-
-  getNextTargets(target: Target) {
-    var stt = target.status;
-    return TARGET_CFGS[stt].next.map(s => {
-      var desc = NEXT_TARGET_DESC[s];
-      if (s=="ONGOING") {
-        desc = (stt=='PENDING'? "Start" :
-                stt=='SUSPENDED' ? "Resume" : "Re-open") + desc;
-      }
-      return {name: s, desc: desc}
-    });
-  }
-
-  getTargetStatusDesc(target: Target) {
-    return TARGET_CFGS[target.status].desc;
-  }
 
   createForm() {
     this.commForm = new FormGroup({
@@ -181,19 +141,16 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
     })
 
     var today = new Date();
-    this.model.redueDate = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`
-  }
-
-  newComment() {
-    this.reportService.addComment(this.task, this.commForm.value.comm);
+    today.setDate(today.getDate() + 7);
+    this.model.redueDate = `${today.toISOString().split('T')[0]}`
+    console.log("redue", this.model.redueDate);
+    
   }
 
   submitRedue() {
+    this.loadingRedue$.next(true);
     this.reportService.reDue(this.task, Date.parse(this.model.redueDate))
-  }
-
-  submitTargetStatus(target: Target, stt: Status) {    
-    this.reportService.targetStatus(this.task, target, stt)
+      .then(() => this.loadingRedue$.next(false))
   }
 
   dateFormat(timestamp: firebase.firestore.Timestamp) {
@@ -201,7 +158,7 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    console.log("destroy");
+    console.log("destroy task", this.index);
     this.subs.forEach(sub => sub.unsubscribe())
   }
 

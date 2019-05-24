@@ -46,6 +46,86 @@ export class ReportService implements OnDestroy {
         this.subs.forEach(sub => sub.unsubscribe())
     }
 
+    // initial get a first snapshot of task, then base on how the task added/remove to 
+    // return
+    // [0] pointer to task array
+    // [1] () => void, used to unsubcribe
+    getTaskUpdates(userID: string): Promise<[Task[], ()=>void]> {
+        return new Promise<any>((resolve, reject) => {
+            let tasks: Task[] = [];
+            const unsub = this.fs.collection(`reports/${userID}/tasks`)
+            .where("status", "==", "OPEN").orderBy("updatedAt", "desc")
+            .onSnapshot(
+                // next
+                snaps => {
+                    console.warn("sanpshot----");
+                    
+                    snaps.docChanges().forEach(change => {
+                        console.log("change", change, change.doc.data())
+                        const update = <Task>change.doc.data();
+                        const [oid, nid] = [change.oldIndex, change.newIndex];
+                        if (change.type == "added") {
+                            tasks.push(update)
+                        } else if(change.type == "removed") {
+                            tasks.splice(oid, 1)
+                        } else {
+                            // if (change.type == "modified")
+                            if (oid != nid) {
+                                // the order had been changed
+                                // [tasks[oid], tasks[nid]] = [tasks[nid], tasks[oid]];    // angular will correctly swap component value, without recreate them
+                                // WARN : Dont change the order of display list, it's anoying
+                            } else {
+                                // the content is changed
+                                for (let k in update) {
+                                    tasks[change.oldIndex][k] = update[k];
+                                }
+                            }
+                        }
+                    })
+
+                    // resolve promise
+                    resolve([tasks, unsub]);
+                },
+                // error
+                err => { this.error(err); reject(err) }
+            )
+        })
+        // return this.fs.collection(`reports/${userID}/tasks`)
+        //     .where("status", "==", "OPEN").orderBy("updatedAt", "desc")
+        //     .onSnapshot(
+        //         // next
+        //         snaps => {
+        //             console.warn("sanpshot----");
+                    
+        //             snaps.docChanges().forEach(change => {
+        //                 console.log("change", change, change.doc.data())
+        //                 const update = <Task>change.doc.data();
+        //                 const [oid, nid] = [change.oldIndex, change.newIndex];
+        //                 if (change.type == "added") {
+        //                     tasks.push(update)
+        //                 } else if(change.type == "removed") {
+        //                     tasks.splice(oid, 1)
+        //                 } else {
+        //                     // if (change.type == "modified")
+        //                     if (oid != nid) {
+        //                         // the order had been changed
+        //                         // [tasks[oid], tasks[nid]] = [tasks[nid], tasks[oid]];    // angular will correctly swap component value, without recreate them
+        //                         // WARN : Dont change the order of display list, it's anoying
+        //                     } else {
+        //                         // the content is changed
+        //                         for (let k in update) {
+        //                             tasks[change.oldIndex][k] = update[k];
+        //                         }
+        //                     }
+        //                 }
+        //             })
+        //         },
+        //         // error
+        //         err => this.error(err)
+        //     )
+    }
+
+    // WARN: This will cause View to be destroyed & rerender
     onTaskChanged$(userID: string) {
         // this one give 2 emitted. one in 'local' (seem like that) and one form server
         
@@ -58,11 +138,11 @@ export class ReportService implements OnDestroy {
         //     map(vals => vals.reverse())
         // )
     }
-    onTaskChanged(userID: string, next: (tasks: Task[]) => any) {
-        const sub = this.onTaskChanged$(userID).subscribe(next)
-        this.subcriptions.push(sub)
-        return sub
-    }
+    // onTaskChanged(userID: string, next: (tasks: Task[]) => any) {
+    //     const sub = this.onTaskChanged$(userID).subscribe(next)
+    //     this.subcriptions.push(sub)
+    //     return sub
+    // }
 
     // populate the sub-collection fields: dueDates.by, comment.by
     private async populateComment(obj: Comment) {
@@ -107,14 +187,14 @@ export class ReportService implements OnDestroy {
         return sums;
     }
 
-    // values = {project, title, desc, dueMs, targets[]}
+    // values = {project, title, desc, dueMs, targets[{desc:}]}
     addTask(userID: string, values: any): Promise<Task> {
         return this._addTask(userID, values.project, values.title,
             values.desc, values.dueMs, values.targets)
     }
 
     private _addTask(userID: string, project: string, title: string, desc: string,
-        dueMs: number, targets: Target[]): Promise<Task> {
+        dueMs: number, targets: {desc: string}[]): Promise<Task> {
         var task: Task = {
             project, title, desc, userID,
             status: "OPEN",
@@ -126,13 +206,10 @@ export class ReportService implements OnDestroy {
         var taskdoc = `reports/${userID}/tasks/${task.uid}`;
         var bw = this.fs.batch();
         bw.set(this.fs.doc(taskdoc), task);
-        targets.forEach(target => {
-            bw.set(this.fs.collection(`${taskdoc}/targets`).doc(), target)
-        })
+        targets.forEach(target => this.addTarget(task, target.desc, "PENDING", bw))
         this.addDuedate(taskdoc, dueMs, bw);
         this.addComm(task, "NewTask", `${task.uid}@@${project}@@${title}`, bw)
-        return bw.commit().then(() => { return task })
-            // FIXME .catch(err => this.error(err))
+        return bw.commit().then(() => { return task }).catch(this.raise)
     }
 
     private addDuedate(taskPath: string, dueMs: number, batch: firestore.WriteBatch) {
@@ -149,17 +226,26 @@ export class ReportService implements OnDestroy {
         bw.update(this.fs.doc(taskdoc), {'due': fromMillis(dueMs)});
         this.addDuedate(taskdoc, dueMs, bw)
         this.addComm(task, "Redue", `${task.due.toMillis()}@@${dueMs}`, bw)
-        return bw.commit()//FIXME .catch(err => this.error(err))
+        return bw.commit().catch(err => this.error(err))
     }
 
     
-    addTarget(task: Task, desc: string, status: Status) {
-        var bw = this.fs.batch();
+    addTarget(task: Task, desc: string, status: Status, batch: firestore.WriteBatch = null) {
+        let needCommit = false;
+        if (batch==null) {
+            needCommit = true;
+            batch = this.fs.batch();
+        }
         var path = `reports/${task.userID}/tasks/${task.uid}/targets`;
         var taskref = this.fs.collection(path).doc();
-        bw.update(taskref, {uid: taskref.id, desc, status})
-        this.addComm(task, "NewTarget", `${taskref.id}@@${status}@@${desc}`, bw)
-        return bw.commit()//FIXME .catch(err => this.error(err))
+        batch.set(taskref, {
+            at: nowTimestamp(),
+            uid: taskref.id,
+            desc, status
+        })
+        this.addComm(task, "NewTarget", `${taskref.id}@@${status}@@${desc}`, batch)
+        if (needCommit) return batch.commit().catch(err => this.error(err))
+        else return null
     }
 
     targetStatus(task: Task, target: Target, status: Status) {
@@ -202,47 +288,116 @@ export class ReportService implements OnDestroy {
 
     onDuedatesChanged$(task: Task) {
         const path = `reports/${task.userID}/tasks/${task.uid}/dueDates`;
-        return this.afs.collection<DueDate>(path).valueChanges().pipe(
-            map(vals => vals.reverse()),
-            catchError(err => this.error(err))
+        return this.afs.collection<DueDate>(path, ref => ref.orderBy("at", "desc"))
+            .valueChanges()
+            .pipe(catchError(err => this.error(err))
         )
     }
-    onDuedatesChanged(task: Task, next: (duedates: DueDate[]) => any) {
-        const sub = this.onDuedatesChanged$(task).subscribe(next)
-        this.subcriptions.push(sub)
-        return sub
-    }
+    // onDuedatesChanged(task: Task, next: (duedates: DueDate[]) => any) {
+    //     const sub = this.onDuedatesChanged$(task).subscribe(next)
+    //     this.subcriptions.push(sub)
+    //     return sub
+    // }
 
     onTargetsChanged$(task: Task) {
         const path = `reports/${task.userID}/tasks/${task.uid}/targets`;
-        return this.afs.collection<Target>(path).valueChanges().pipe(
-            map(vals => vals.reverse()),
-            catchError(err => this.error(err))
+        return this.afs.collection<Target>(path, ref => ref.orderBy("at", "desc"))
+            .valueChanges()
+            .pipe(catchError(err => this.error(err))
         )
     }
-    onTargetsChanged(task: Task, next: (targets: Target[]) => any) {
-        const sub = this.onTargetsChanged$(task).subscribe(next)
-        this.subcriptions.push(sub)
-        return sub
+    // onTargetsChanged(task: Task, next: (targets: Target[]) => any) {
+    //     const sub = this.onTargetsChanged$(task).subscribe(next)
+    //     this.subcriptions.push(sub)
+    //     return sub
+    // }
+
+    // Don'd destroy the comment list, just append to it. When a new comment added, auto push on first of array
+    // Return Promise of array:
+    // [0] next() => boolean, when called will add next comments to array, return true if this is last comment
+    // [1] unsub() => void, use to detach listener
+    private snapsToComment(snaps: firestore.QuerySnapshot) {
+        return snaps.docs.map(doc => <Comment>doc.data())
     }
+
+    async getPaginationComments$(task: Task, max: number, latestComms: Comment[], comms: Comment[], type: CommentType = null):
+            Promise<[()=>Promise<boolean>, ()=>void]> {
+
+        const colRef = this.fs.collection(`reports/${task.userID}/tasks/${task.uid}/comments`);
+        let query = type ? colRef.where('type', '==', type).orderBy('at', 'desc') :
+                           colRef.orderBy('at', 'desc');
+
+        let lastSeen: firestore.QueryDocumentSnapshot = null;
+        let firstSeen: firestore.QueryDocumentSnapshot = null;
+
+        // First, get comment added within 7 days
+        const latestSnaps = await query.where('at', '>', fromMillis(nowMillis() - SUMMARY_SINCE_MS))
+            .get().catch(err => this.msgService.error(err))
+        if (!latestSnaps) return [null, null];
+        latestComms.push(...this.snapsToComment(latestSnaps))
+
+        if (latestSnaps.size > 0) {
+            lastSeen = latestSnaps.docs[latestSnaps.size - 1];
+            firstSeen = latestSnaps.docs[0];
+        }
+
+        // query to get last 'max' comments     
+        const nextComments = lastSeen==null ? () => { return Promise.resolve(true)} : // do nothing, there's no more to fetch
+            () => {
+                return query.startAfter(lastSeen).limit(max).get()
+                    .then(snaps => {
+                        lastSeen = snaps.docs[snaps.size - 1];
+                        comms.push(...this.snapsToComment(snaps));
+                        return snaps.docs.length < max;
+                    })
+                    .catch(err => {
+                        this.error(err);
+                        return true;
+                    })
+            }
+        await nextComments();   // run it to get initial value
+
+        // We only add comment, there's no other activities here
+        const newCommentQuery = firstSeen ? query.endBefore(firstSeen) : query;
+        const newComUnsub = newCommentQuery.onSnapshot(
+            snaps => {
+                snaps.docChanges().forEach(change => {
+                    // just to make sure
+                    if (change.type == "added") {
+                        latestComms.unshift(<Comment>change.doc.data())
+                    }
+                })
+            },
+            err => this.error(err)
+        )
+
+        return [nextComments, newComUnsub];
+    }
+
 
     onCommentsChanged$(task: Task) {
         var path = `reports/${task.userID}/tasks/${task.uid}/comments`;
-        return this.afs.collection<Comment>(path).valueChanges().pipe(
-            map(vals => vals.reverse()),
-            catchError(err => this.error(err))
+        return this.afs.collection<Comment>(path, ref => ref.orderBy('at', 'desc'))
+            .valueChanges()
+            .pipe(catchError(err => this.error(err))
         )
     }
-    onCommentsChanged(task: Task, next: (comms: Comment[]) => any) {
-        const sub = this.onCommentsChanged$(task).subscribe(next)
-        this.subcriptions.push(sub)
-        return sub
-    }
+    // onCommentsChanged(task: Task, next: (comms: Comment[]) => any) {
+    //     const sub = this.onCommentsChanged$(task).subscribe(next)
+    //     this.subcriptions.push(sub)
+    //     return sub
+    // }
     
     error(err: any) {
         console.error(err)
         this.msgService.error("Something when wrong. This normally caused by an unhealthy network")
         return Promise.resolve(null)
+    }
+
+    raise(err: any) {
+        console.error(err)
+        this.msgService.error("Something when wrong. This normally caused by an unhealthy network");
+        return Promise.reject(err);
     }
 
     unsub(sub: Subscription) {

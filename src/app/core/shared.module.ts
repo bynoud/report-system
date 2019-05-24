@@ -18,7 +18,6 @@ import { LoadingComponent } from './loading/loading.component';
         LoadingComponent
     ],
     entryComponents: [
-        LoadingComponent,
         LoadingByContentComponent
     ]
 })

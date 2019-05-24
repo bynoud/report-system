@@ -13,10 +13,17 @@ import { environment } from '../environments/environment';
 import { AppRoutingModule } from './app.routes';
 import { ReportModule } from './report/report.module';
 import { UserModule } from './user/user.module';
+import { SharedModule } from './core/shared.module';
+import { PageMainComponent } from './core/main-pages/page-main.component';
+import { PageNotfoundComponent } from './core/main-pages/page-notfound.component';
+import { NavbarComponent } from './core/navbar/navbar.component';
 
 @NgModule({
   declarations: [
     AppComponent,
+    PageMainComponent,
+    PageNotfoundComponent,
+    NavbarComponent
   ],
   imports: [
     BrowserModule,
@@ -29,6 +36,7 @@ import { UserModule } from './user/user.module';
     ReportModule,
     UserModule,
     AppRoutingModule,
+    SharedModule
   ],
   providers: [],
   bootstrap: [AppComponent],

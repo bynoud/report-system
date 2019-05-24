@@ -53,44 +53,6 @@
     color: var(--gray);
 }
 
-/* hide the caret of boostrap on dropdown */
-.target-status.dropdown-toggle::after {
-    display: none;
-}
-/* visual check to get all status aligned */
-/* .target-status {
-    min-width: 7rem;
-} */
-/* mimic btn-* bootstrap */
-.target-status.DONE { /* success */
-    color: var(--white);
-    background-color: var(--success);
-    border-color: var(--success);
-}
-
-.target-status.ONGOING { /* secondary */
-    color: var(--white);
-    background-color: var(--info);
-    border-color: var(--info);
-}
-
-.target-status.DISCARDED { /* warning */
-    color: var(--white);
-    background-color: var(--gray-dark);
-    border-color: var(--gray-dark);
-}
-
-.target-status.SUSPENDED {
-    color: var(--white);
-    background-color: var(--gray);
-    border-color: var(--gray);
-}
-
-.target-status.PENDING { /* warning */
-    color: var(--white);
-    background-color: var(--warning);
-    border-color: var(--warning);
-}
 
 /* remove all margin inside detail status elements */
 .report-status-detail * {

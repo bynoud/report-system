@@ -16,6 +16,9 @@ export class ReportUserComponent implements OnInit, OnDestroy {
   user: User;
   tasks: Task[];
   subs: Subscription[] = [];
+  taskUnsubFn: () => void;
+
+  tests: any[] = [];
   
   constructor(
     private route: ActivatedRoute,
@@ -35,13 +38,35 @@ export class ReportUserComponent implements OnInit, OnDestroy {
       }
 
     }))
+
+    this.tests = [{a:'aaa', b:'aab'}, {a:'bba', b:'bbb'}, {a:'cca', b:'ccb'}];
+    // this.reportService.getTaskUpdates('eFpWYzxlU7PR70gi1Guq0688B9x1', [])
+  }
+
+  testAdd() {
+    this.tests.push({a:'dda', b:'ddb'})
+  }
+
+  testRemove() {
+    this.tests.splice(1,1)
+    console.log("X", this.tests);
+    
+  }
+
+  testModify() {
+    // let upd = {a:'ffa', b:'ffb'};
+    // for (let k in upd) {
+    //   this.tests[1][k] = upd[k];
+    // }
+
+    [this.tests[1], this.tests[2]] = [this.tests[2], this.tests[1]]
   }
 
   delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
   }
 
-  getTasks(user: User) {
+  getTasks_destructionOnChange(user: User) {
     this.user = user;
     if (user) {
       this.subs.push(this.reportService.onTaskChanged$(user.uid).subscribe(tasks => {
@@ -52,11 +77,24 @@ export class ReportUserComponent implements OnInit, OnDestroy {
     }
   }
 
+  getTasks(user: User) {
+    this.user = user;
+    if (user) {
+      this.reportService.getTaskUpdates(user.uid).then(result => {
+        [this.tasks, this.taskUnsubFn] = result;
+      })
+    } else {
+      if (this.taskUnsubFn) this.taskUnsubFn();
+      this.tasks = [];
+    }
+  }
+
 
   ngOnDestroy() {
-    console.log("destroy");
+    console.log("destroy", );
     
     this.subs.forEach(sub => sub.unsubscribe())
+    if (this.taskUnsubFn) this.taskUnsubFn();
   }
 
 }

@@ -5,7 +5,7 @@ import { Subscription } from 'rxjs';
 
 @Component({
     selector: "app-page-main",
-    template: "<p>page main Loading...</p>",
+    template: "<app-loading></app-loading>",
     styles: [],
 })
 export class PageMainComponent implements OnInit, OnDestroy {

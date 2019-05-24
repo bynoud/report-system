@@ -4,7 +4,6 @@ import { ReportRoutingModule } from './report.routes';
 import { ReportComponent } from './report.component';
 import { ReportSummaryComponent } from './report-summary/report-summary.component';
 import { ReportUserComponent } from './report-user/report-user.component';
-import { NavbarComponent } from './navbar/navbar.component';
 import { TaskDetailComponent } from './task-detail/task-detail.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TaskNewComponent } from './task-new/task-new.component';
@@ -12,7 +11,10 @@ import { FlashMessageModule } from 'src/app/core/flash-message/flash-message.mod
 import { ReportSummaryDetailComponent } from './report-summary/report-summary-detail.component';
 import { ReportService } from './report.service';
 import { SharedModule } from '../core/shared.module';
-import { CommentComponent } from './comment/comment.component';
+import { TaskTargetComponent } from './task-detail/task-target.component';
+import { ReportCommentComponent } from './comment/report-comment.component';
+import { ReportTestComponent } from './report-user/report-test.component';
+import { ReportCommentListComponent } from './comment/report-comment-list.component';
 
 @NgModule({
   declarations: [
@@ -20,10 +22,12 @@ import { CommentComponent } from './comment/comment.component';
     ReportSummaryComponent,
     ReportSummaryDetailComponent,
     ReportUserComponent,
-    NavbarComponent,
     TaskDetailComponent,
+    TaskTargetComponent,
     TaskNewComponent,
-    CommentComponent,
+    ReportCommentComponent,
+    ReportCommentListComponent,
+    ReportTestComponent
   ],
   imports: [
     CommonModule,

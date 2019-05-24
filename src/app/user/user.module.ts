@@ -8,6 +8,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { FlashMessageModule } from '../core/flash-message/flash-message.module';
 import { UserRoutingModule } from './user.route';
 import { SharedModule } from '../core/shared.module';
+import { UserActivateComponent } from './user-activate/user-activate.component';
 
 @NgModule({
     declarations: [
@@ -15,6 +16,7 @@ import { SharedModule } from '../core/shared.module';
         LoginUserComponent,
         EditUserComponent,
         CreateUserComponent,
+        UserActivateComponent,
     ],
     imports: [
         CommonModule,

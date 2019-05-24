@@ -1,9 +1,9 @@
 
 <div class="card card-shadow">
-  <div class="card-header" data-toggle="collapse" attr.data-target="#report-item--{{task.uid}}-collapse">
+  <div class="card-header" data-toggle="collapse" attr.data-target="#report-comments-{{task.uid}}">
     <div class='d-flex align-items-start'
       data-toggle="tooltip" data-placement="right" [title]="taskStatus.desc">
-        <i [className]="'fas status-icon ' + taskStatus.icon"
+        <i [className]="'status-icon ' + taskStatus.icon"
           [style.color]="taskStatus.iconColor"></i>
         <span class="text-primary font-weight-bold mr-2 text-nowrap">{{task.project}}</span>
         <span class="text-secondary mr-3 truncate-on-close text-truncate font-weight-bold">
@@ -23,24 +23,31 @@
             <button type="button" class="btn btn-outline-info btn-round-left" disabled>
                     {{dateFormat(task.enteredAt)}}
             </button>
+
             <button type="button" class="btn dropdown-toggle btn-round-right" data-toggle="dropdown"
-              [style.color]="taskStatus.iconColor" [style.borderColor]="taskStatus.iconColor">
+              [style.color]="taskStatus.iconColor" [style.borderColor]="taskStatus.iconColor"
+              [appLoadingBy]="loadingRedue$">
                 <span data-toggle="tooltip" data-placement="right" title="Click to open Re-schedule form">
                   {{dateFormat(task.due)}}</span>
             </button>
+
             <div class="dropdown-menu">
-                <h6 class="dropdown-header">Re-schedule</h6>
+                <!-- <h6 class="dropdown-header">Re-schedule</h6> -->
                 <form #redueForm="ngForm" (ngSubmit)="submitRedue()" class="px-4 py-3">
-                    <input type="date" [(ngModel)]="model.redueDate" name="redueDate" class="form-control" required>
-                    <button type="submit" class="btn btn-primary">Change</button>
+                  <div class="form-group">
+                    <label for="redueDate">Re-schedule</label>
+                    <input type="date" id="redueDate" [(ngModel)]="model.redueDate" name="redueDate" class="form-control" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Change</button>
                 </form>
             </div>
+
         </div>
 
-        <div *ngIf="duedates.length > 1" class="dropdown d-inline"
+        <div *ngIf="duedates.length > 0" class="dropdown d-inline"
           data-toggle="tooltip" data-placement="right" title="Click to show re-schedule history">
             <span class="badge badge-pill badge-info dropdown-toggle align-middle ml-2" 
-              data-toggle="dropdown" [style.cursor]="'pointer'">{{duedates.length - 1}}</span>
+              data-toggle="dropdown" [style.cursor]="'pointer'">{{duedates.length}}</span>
             <div class="dropdown-menu dropdown-menu-right dropdown-info-only">
                 <h6 class="dropdown-header">Re-schedule history</h6>
                 <p *ngFor="let d of duedates" class="dropdown-item disabled" href=''>{{dateFormat(d.due)}}</p>
@@ -49,55 +56,32 @@
     </div>
 
     <!-- task targets -->
-    <div *ngFor="let target of targets" class="card-text">
-        <div class="dropdown show"
-          data-toggle="tooltip" data-placement="right" [title]="getTargetStatusDesc(target)">
-            <a [className]="'btn dropdown-toggle btn-sm text-left target-status ' + target.status"
-              href="#" role="button" data-toggle="dropdown"
-              >
-              <span class="d-flex align-items-center">
-                <i [className]="'ml-auto ' + getTargetIcon(target)"></i></span>
-            </a>
-            <div class="dropdown-menu target-status-items">
-              <h6 class="dropdown-header">{{getTargetStatusDesc(target)}}</h6>
-              <a *ngFor="let next of getNextTargets(target)"
-                class="dropdown-item text-left" [style.cursor]="'pointer'"
-                [class.active]="next.name == target.status"
-                (click)="submitTargetStatus(target, next.name)">
-                {{next.desc}}</a>
-            </div>
-            <span [className]="'ml-2 target-text ' + target.status">{{target.desc}}</span>
-        </div>
+    <div *ngFor="let target of targets">
+      <app-task-target [task]="task" [target]="target"></app-task-target>
     </div>
-
-    <!-- task latest status -->
-    <!-- <div class='editor-area border-primary py-2' data-report-task="${taskID}"></div>
-    <button class='btn btn-outline-primary new-status-submit' disabled>Submit</button>
-
-    <p data-tunless="newStatus" class="system-msg">There's no Updated Status submitted</p>
-    <div class="card-text status-items status-newitems">
-        <div data-tloop="newStatus" class='status-new'>
-            <hr>
-            <div class='row'>
-                <div class="col-md-3 col-lg-2"><strong>${fnDateFormat(date)}</strong></div>
-                <div class="col-md-9 col-lg-10 report-status-detail" data-thtml>${text}</div>
-            </div>
-        </div>
-    </div> -->
 
     <!-- Comments -->
-    <div id="report-item--{{task.uid}}-collapse" class="collapse" data-parent="#report-collapse-parent">
-        <p *ngIf='comments.length==0' class="text-system">There's no Comment</p>
-        <!-- loop throught <input>.task.status as array -->
-        <div *ngFor="let comm of comments" class="card-text">
-          <app-comment [task]="task" [comm]="comm"></app-comment>
-            <!-- <hr>
-            <div class='row'>
-                <div class="col-md-3 col-lg-2 report-status-date"><strong>{{dateFormat(comm.at)}}</strong></div>
-                <div class="col-md-9 col-lg-10 report-status-detail">[{{comm.by}}] [{{comm.type}}] {{comm.text}}</div>
-            </div> -->
-        </div>
-    </div>
+    <app-report-comment-list [task]="task" ></app-report-comment-list>
+    <!-- <div id="report-item--{{task.uid}}-collapse" class="collapse" data-parent="#report-collapse-parent">
+
+      <p *ngIf='comments.length==0' class="card-text text-system ml-auto">- There's no Comment</p>
+
+      <div *ngIf="comments.length>0" class="bg-light d-flex flex-column">
+        <app-report-comment *ngFor="let comm of comments" class="card-text"
+          [task]="task" [comm]="comm"></app-report-comment>
+        <a *ngIf="!isLastComment" (click)="getNextComments()" [routerLink]="" class="ml-auto">... More</a>
+        <span *ngIf="isLastComment" class="text-system ml-auto">- End of comments section</span>
+      </div>
+
+      <form #commForm="ngForm" (ngSubmit)="submitNewComment()" class="d-flex flex-column">
+        <textarea type="text" class="form-control" rows="3" required
+          [(ngModel)]="model.newComment" name="newComment" placeholder="Add your comment"></textarea>
+        <button class="btn btn-primary ml-auto" type="submit" [disabled]="!commForm.valid">Add Comment</button>
+      </form>
+
+    </div> -->
+
+
   </div>
 
 </div>

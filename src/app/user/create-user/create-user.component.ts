@@ -3,7 +3,7 @@ import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms'
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
-import { Subject } from 'rxjs';
+import { Subject, BehaviorSubject } from 'rxjs';
 
 const LOREM_PIXEL = [
   "animals", "cats", "food",
@@ -17,7 +17,7 @@ const LOREM_PIXEL = [
 })
 export class CreateUserComponent implements OnInit {
 
-  loading$ = new Subject<boolean>();
+  loading$ = new BehaviorSubject<boolean>(false);
 
   userForm: FormGroup;
   photoURL: string;
@@ -61,15 +61,10 @@ export class CreateUserComponent implements OnInit {
         // this.resetFields();
         this.router.navigate(['/']);
         this.msgService.info(`Account ${value.email} had been Created and Login.`, true)
-        this.loading$.next(false)
       })
     .catch(err => {
       console.warn("SSS");
-      
-    })
-    .finally(() => {
-      console.warn("HEH");
-      
+      this.loading$.next(false)      
     })
   }
   

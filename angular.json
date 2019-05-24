@@ -24,12 +24,12 @@
             ],
             "styles": [
               "src/styles.css",
-              "node_modules/bootstrap/dist/css/bootstrap.min.css"
+              "libs/bootstrap-4.3.1.min.css"
             ],
             "scripts": [
-              "node_modules/jquery/dist/jquery.min.js",
+              "libs/jquery-3.4.0.min.js",
               "libs/popper.min.js",
-              "node_modules/bootstrap/dist/js/bootstrap.js"
+              "libs/bootstrap.min.js"
             ],
             "es5BrowserSupport": true
           },
