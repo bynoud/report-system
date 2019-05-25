@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from "@angular/core";
 import { AngularFirestore, QuerySnapshot } from '@angular/fire/firestore';
 import { Task, Status, fromMillis, Target,
-    CommentType, DueDate, Comment, nowMillis, nowTimestamp } from 'src/app/models/reports';
+    CommentType, DueDate, Comment, nowMillis, nowTimestamp, serverTime } from 'src/app/models/reports';
 import { firestore } from 'firebase';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { map, catchError } from 'rxjs/operators';
@@ -195,19 +195,20 @@ export class ReportService implements OnDestroy {
 
     private _addTask(userID: string, project: string, title: string, desc: string,
         dueMs: number, targets: {desc: string}[]): Promise<Task> {
+
+        const taskRef = this.fs.collection(`reports/${userID}/tasks`).doc();
         var task: Task = {
             project, title, desc, userID,
             status: "OPEN",
             due : fromMillis(dueMs),
-            enteredAt: nowTimestamp(),
-            updatedAt: nowTimestamp(),
-            uid: this.afs.createId(),
+            enteredAt: serverTime(),
+            updatedAt: serverTime(),
+            uid: taskRef.id,
         }
-        var taskdoc = `reports/${userID}/tasks/${task.uid}`;
         var bw = this.fs.batch();
-        bw.set(this.fs.doc(taskdoc), task);
+        bw.set(taskRef, task);
         targets.forEach(target => this.addTarget(task, target.desc, "PENDING", bw))
-        this.addDuedate(taskdoc, dueMs, bw);
+        this.addDuedate(taskRef.path, dueMs, bw);
         this.addComm(task, "NewTask", `${task.uid}@@${project}@@${title}`, bw)
         return bw.commit().then(() => { return task }).catch(this.raise)
     }
@@ -215,7 +216,7 @@ export class ReportService implements OnDestroy {
     private addDuedate(taskPath: string, dueMs: number, batch: firestore.WriteBatch) {
         var dueref = this.fs.collection(`${taskPath}/dueDates`).doc();
         batch.set(dueref, {
-            at: nowTimestamp(), by: this.userID, due: fromMillis(dueMs)
+            at: serverTime(), by: this.userID, due: fromMillis(dueMs)
         })
     }
 
@@ -239,7 +240,7 @@ export class ReportService implements OnDestroy {
         var path = `reports/${task.userID}/tasks/${task.uid}/targets`;
         var taskref = this.fs.collection(path).doc();
         batch.set(taskref, {
-            at: nowTimestamp(),
+            at: serverTime(),
             uid: taskref.id,
             desc, status
         })
@@ -276,10 +277,10 @@ export class ReportService implements OnDestroy {
         batch.set(commref, {
             // serverTime() will only valid after the entry submitted
             // this cause error when we subcribe to a valueChanges(), since it return a local value with 'null'
-            uid: commref.id, at: nowTimestamp(), by: this.userID, type, text
+            uid: commref.id, at: serverTime(), by: this.userID, type, text
         })
         // assume a comment is added mean task still open
-        batch.update(this.fs.doc(taskdoc), {updatedAt: nowTimestamp(),
+        batch.update(this.fs.doc(taskdoc), {updatedAt: serverTime(),
             status: (type=="CloseTask")? "CLOSED" : "OPEN"})
         if (doCommit) return batch.commit()//FIXME .catch(err => this.error(err))
         else return null

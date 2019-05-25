@@ -13,7 +13,7 @@
 
 export interface User {
   createdAt: firebase.firestore.Timestamp,
-  role: "user" | "manager" | "admin",
+  role: string,
   email: string,
   displayName: string,
   photoURL: string,

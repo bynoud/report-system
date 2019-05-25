@@ -4,12 +4,13 @@ import { Router, CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from
 import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFirestore } from '@angular/fire/firestore';
 
-import { Observable, of, Subject, BehaviorSubject, ReplaySubject } from 'rxjs';
+import { Observable, of, Subject, BehaviorSubject, ReplaySubject, Subscription } from 'rxjs';
 import { switchMap, first, map, mergeMap, catchError, takeLast, concat, take } from 'rxjs/operators';
 import { User } from 'src/app/models/user';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 import { auth } from 'firebase';
 import { serverTime } from 'src/app/models/reports';
+import { AngularFireFunctions } from '@angular/fire/functions';
 
 // this is also act as AuthGaurd
 
@@ -17,6 +18,8 @@ import { serverTime } from 'src/app/models/reports';
 export class AuthService implements CanActivate {
   // user$: Observable<User>;
   private fs: firebase.firestore.Firestore;
+
+  private _authSub: Subscription;
   private _activeUser$ = new ReplaySubject<User>(1);  // only replay the last value
   private _activeFBUser$ = new ReplaySubject<firebase.User>(1);
   private _authUserChanged$ = new Subject<boolean>();
@@ -28,29 +31,38 @@ export class AuthService implements CanActivate {
   constructor(
     private afAuth: AngularFireAuth,
     private afs: AngularFirestore,
+    private fns: AngularFireFunctions,
     private router: Router,
     private msgService: FlashMessageService
   ) {
 
-    this.fs = this.afs.firestore;
-    this.afAuth.authState.subscribe(fbUser => {
-        console.log("AUTH FB user", fbUser);
-        if (fbUser) {
-          // if (!fbUser.emailVerified) {
-          //   this.userChange(null, fbUser);
-          // } else {
-          this.fs.doc(`users/${fbUser.uid}`).get()
-            .then(user => this.userChange(<User>user.data(), fbUser))
-            .catch(err => {
-              this.userChange(null, fbUser)
-              this.error(err)
-            })
-        } else {
-          this.userChange(null, null)
-        }
-      })
-    
+    this.fs = this.afs.firestore;;
+    // this.fns.functions.useFunctionsEmulator('http://localhost:5001');
+    this.subAuthState();
     this.afAuth.auth.setPersistence(auth.Auth.Persistence.LOCAL);
+  }
+
+  private subAuthState() {
+    this._authSub = this.afAuth.authState.subscribe(fbUser => {
+      console.log("AUTH FB user", fbUser);
+      if (fbUser) {
+        // if (!fbUser.emailVerified) {
+        //   this.userChange(null, fbUser);
+        // } else {
+        this.fs.doc(`users/${fbUser.uid}`).get()
+          .then(user => this.userChange(<User>user.data(), fbUser))
+          .catch(err => {
+            this.userChange(null, fbUser)
+            this.error(err)
+          })
+      } else {
+        this.userChange(null, null)
+      }
+    })
+  }
+
+  private unsubAuthState() {
+    this._authSub.unsubscribe();
   }
 
   private userChange(user: User, fbUser: firebase.User) {
@@ -109,8 +121,19 @@ export class AuthService implements CanActivate {
     )
   }
 
+  private createUser(userCred: auth.UserCredential, opts: {[s:string]: string} = {}): Promise<void> {
+    if (!userCred.additionalUserInfo.isNewUser) return;
+    console.log("create a new user");
+    
+    return this.fns.functions.httpsCallable('createUser')({
+      managerID: "",
+      ...opts
+    })
+      .then(res => console.log('created functions', res))
+      .catch(err => this.error(err))
+  }
   
-  private createUser(user: firebase.User, opts: {[s:string]: string} = {}): Promise<void> {
+  private createUserLocal(user: firebase.User, opts: {[s:string]: string} = {}): Promise<void> {
     const vals = {
       uid: user.uid,
       email: user.email,
@@ -147,10 +170,12 @@ export class AuthService implements CanActivate {
 
 
   emailSignUp(displayName: string, email: string, photoURL: string, managerID: string, password: string): Promise<void> {
+    this.unsubAuthState();
     return this.afAuth.auth.createUserWithEmailAndPassword(email, password)
-      .then( uathInfo => {
-        return this.createUser(uathInfo.user, {displayName, photoURL, managerID, email});
+      .then( cred => {
+        return this.createUser(cred, {displayName, photoURL, managerID, email});
       })
+      .then(() => this.subAuthState())
       .catch(err => this.error(err))
   }
 
@@ -160,7 +185,7 @@ export class AuthService implements CanActivate {
 
   googleLogin() {
     const provider = new auth.GoogleAuthProvider();
-    return this.oAuthLogin(provider);
+    return this.oAuthLogin(provider)
   }
 
   facebookLogin() {
@@ -169,9 +194,16 @@ export class AuthService implements CanActivate {
   }
 
   private oAuthLogin(provider: auth.AuthProvider) {
+    this.unsubAuthState();
+    console.log("start");
+    
     return this.afAuth.auth.signInWithPopup(provider).then(cred => {
-      const credential = cred;
-      return this.createUser(credential.user);
+      console.log("finish popup");
+      
+      return this.createUser(cred);
+    })
+    .then(() => {
+      this.subAuthState()
     })
     .catch(err => this.error(err))
   }

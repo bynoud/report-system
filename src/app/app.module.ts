@@ -9,6 +9,8 @@ import { AppComponent } from './app.component';
 import { AngularFireModule } from '@angular/fire';
 import { AngularFirestoreModule } from '@angular/fire/firestore';
 import { AngularFireAuthModule } from '@angular/fire/auth';
+import { AngularFireFunctionsModule } from '@angular/fire/functions';
+
 import { environment } from '../environments/environment';
 import { AppRoutingModule } from './app.routes';
 import { ReportModule } from './report/report.module';
@@ -35,6 +37,7 @@ import { SidebarComponent } from './core/sidebar/sidebar.component';
     AngularFireModule.initializeApp(environment.firebase),
     AngularFirestoreModule,
     AngularFireAuthModule,
+    AngularFireFunctionsModule,
     ReportModule,
     UserModule,
     AppRoutingModule,
