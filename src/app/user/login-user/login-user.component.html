@@ -6,8 +6,8 @@
     <div class="card-header">
         SIGN IN
     </div>
-    <div class="card-body">
-        <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+    <div class="card-body d-flex flex-column align-items-center">
+        <!-- <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
 
             <div class="form-group">
                 <label for="email">Email</label>
@@ -26,6 +26,19 @@
 
         </form>
 
-        <a [routerLink]="['./new']" class="card-link">New user</a>
+        <a [routerLink]="['./new']" class="card-link">New user</a> -->
+
+        <!-- <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center w-100" (click)="googleLogin()">
+            <img src="assets/google-logo-512px.png" width="20px" alt="G-logo" class="mr-2">
+            Login with Google
+        </button>
+
+        <h5 class="text-primary">or</h5> -->
+
+        <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center w-100" (click)="facebookLogin()">
+            <img src="assets/facebook-logo-900px.png" width="20px" alt="F-logo"
+                 class="mr-2">
+            Login with Facebook
+        </button>
     </div>
 </div>

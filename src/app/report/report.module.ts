@@ -7,7 +7,6 @@ import { ReportUserComponent } from './report-user/report-user.component';
 import { TaskDetailComponent } from './task-detail/task-detail.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TaskNewComponent } from './task-new/task-new.component';
-import { FlashMessageModule } from 'src/app/core/flash-message/flash-message.module';
 import { ReportSummaryDetailComponent } from './report-summary/report-summary-detail.component';
 import { ReportService } from './report.service';
 import { SharedModule } from '../core/shared.module';
@@ -33,7 +32,6 @@ import { ReportCommentListComponent } from './comment/report-comment-list.compon
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    FlashMessageModule,
     ReportRoutingModule,
     SharedModule
   ],

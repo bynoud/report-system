@@ -77,12 +77,10 @@ export class ReportUserComponent implements OnInit, OnDestroy {
     }
   }
 
-  getTasks(user: User) {
+  async getTasks(user: User) {
     this.user = user;
     if (user) {
-      this.reportService.getTaskUpdates(user.uid).then(result => {
-        [this.tasks, this.taskUnsubFn] = result;
-      })
+      [this.tasks, this.taskUnsubFn] = await this.reportService.getTaskUpdates(user.uid)
     } else {
       if (this.taskUnsubFn) this.taskUnsubFn();
       this.tasks = [];
@@ -91,7 +89,7 @@ export class ReportUserComponent implements OnInit, OnDestroy {
 
 
   ngOnDestroy() {
-    console.log("destroy", );
+    console.log("destroy", this.taskUnsubFn);
     
     this.subs.forEach(sub => sub.unsubscribe())
     if (this.taskUnsubFn) this.taskUnsubFn();

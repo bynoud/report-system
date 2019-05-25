@@ -8,7 +8,11 @@
       "sourceRoot": "src",
       "projectType": "application",
       "prefix": "app",
-      "schematics": {},
+      "schematics": {
+        "@schematics/angular:component": {
+          "styleext": "scss"
+        }
+      },
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
@@ -23,13 +27,17 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.css",
-              "libs/bootstrap-4.3.1.min.css"
+              "src/assets/styles/main.scss"
             ],
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "node_modules/bootstrap/scss"
+              ]
+            },
             "scripts": [
               "libs/jquery-3.4.0.min.js",
               "libs/popper.min.js",
-              "libs/bootstrap.min.js"
+              "node_modules/bootstrap/dist/js/bootstrap.js"
             ],
             "es5BrowserSupport": true
           },
@@ -85,11 +93,10 @@
             "tsConfig": "src/tsconfig.spec.json",
             "karmaConfig": "src/karma.conf.js",
             "styles": [
-              "src/styles.css",
-              "node_modules/bootstrap/dist/css/bootstrap.min.css"
+              "src/assets/styles/main.scss"
             ],
             "scripts": [
-              "node_modules/jquery/dist/jquery.min.js",
+              "libs/jquery-3.4.0.min.js",
               "libs/popper.min.js",
               "node_modules/bootstrap/dist/js/bootstrap.js"
             ],

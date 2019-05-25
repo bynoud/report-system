@@ -1,5 +1,4 @@
 
-import { UserInfo } from 'firebase';
 /*
   interface firebase.UserInfo {
     displayName: string | null;
@@ -13,6 +12,7 @@ import { UserInfo } from 'firebase';
 */
 
 export interface User {
+  createdAt: firebase.firestore.Timestamp,
   role: "user" | "manager" | "admin",
   email: string,
   displayName: string,

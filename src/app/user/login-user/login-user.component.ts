@@ -71,4 +71,12 @@ export class LoginUserComponent implements OnInit, OnDestroy {
         this.loading$.next(false)})
   }
 
+  googleLogin() {
+    this.authService.googleLogin()
+  }
+
+  facebookLogin() {
+    this.authService.facebookLogin()
+  }
+
 }

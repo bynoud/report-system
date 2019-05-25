@@ -9,6 +9,7 @@ import { switchMap, first, map, mergeMap, catchError, takeLast, concat, take } f
 import { User } from 'src/app/models/user';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 import { auth } from 'firebase';
+import { serverTime } from 'src/app/models/reports';
 
 // this is also act as AuthGaurd
 
@@ -106,49 +107,24 @@ export class AuthService implements CanActivate {
         return false
       })
     )
-    // return this.afAuth.authState.pipe(
-    //   map(user => {
-    //     if (user) {
-    //       return true
-    //     } else {
-    //       this.router.navigate(['/'])
-    //       this.msgService.error("Login is required")
-    //     }
-    //     return false
-    //   })
-    // )
   }
 
-  // get activeUserID$(): Observable<string> {
-  //   return this.afAuth.authState.pipe(
-  //     map(user => user.uid)
-  //   );
-  // }
+  
+  private createUser(user: firebase.User, opts: {[s:string]: string} = {}): Promise<void> {
+    const vals = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      managerID: "",
+      role: "user",
+      createdAt: serverTime(),
+      ...opts};
+    return this.afs.doc(`users/${user.uid}`).set(vals).catch(err => this.error(err))
+  }
 
-  // get activeUser(): User {
-  //   // return this.user$.pipe(first());
-  //   return this.user
-  // }
-
-  // WARN: This one leak "getUser$()" subcription, if the user is a lifetime member (ex: service)
-  // getActiveUser$(deb: string): Observable<User> {
-  //   return this.afAuth.authState.pipe(
-  //     switchMap(fbUser => {
-  //       console.log("auth changed", fbUser);
-  //       if (fbUser) return this.getUser$(fbUser.uid, `from active XX -${deb}-`).pipe(catchError(err => this.error("active getuser "+err)))
-  //       else return of(null)
-  //     }),
-  //     catchError(err => this.error("activeuser "+err))
-  //   )
-  // }
-
-  // getActiveUser(): Promise<firebase.User> { return this.activeUser$.toPromise(); }
 
   getUsers$(): Promise<User[]> {
-    // return this.afs.collection<User>('users').valueChanges().pipe(
-    //   take(1),
-    //   catchError(err => this.error("getusers "+err))
-    // ).toPromise();
     return this.fs.collection('users').get()
       .then(snaps => {
         return snaps.docs.map(userSS => <User>userSS.data() )
@@ -156,14 +132,7 @@ export class AuthService implements CanActivate {
       .catch(err => this.error(err))
   }
 
-  // getUsers(): Promise<User[]> {
-  //   return this.afs.collection<User>('users').valueChanges().toPromise();
-  // }
-
   getUser$(uid: string, deb: string = ""): Promise<User> {
-    // return this.afs.doc<User>(`users/${uid}`).valueChanges().pipe(
-    //   catchError(err => this.error(`getuserXX [${deb}]`+err))
-    // )
     if (this._users$[uid]) {
       return Promise.resolve(this._users$[uid]);
     } else {
@@ -176,43 +145,35 @@ export class AuthService implements CanActivate {
     }
   }
 
-  // getUser(uid: string): Promise<User> {
-  //   console.log("getuser", uid);
-    
-  //   return this.afs.doc<User>(`users/${uid}`).valueChanges().toPromise();
-  // }
-
-  // googleSignIn() {
-  //   this.afAuth.auth.signInWithPopup(new auth.GoogleAuthProvider())
-  //   return this.oAuthLogin(provider);
-  // }
 
   emailSignUp(displayName: string, email: string, photoURL: string, managerID: string, password: string): Promise<void> {
     return this.afAuth.auth.createUserWithEmailAndPassword(email, password)
       .then( uathInfo => {
-        var user: User = {displayName, email, photoURL, managerID,
-          uid: uathInfo.user.uid, role: "user"}
-        return this.createUser(user);
+        return this.createUser(uathInfo.user, {displayName, photoURL, managerID, email});
       })
       .catch(err => this.error(err))
-  }
-
-  private createUser(user: User): Promise<void> {
-    if (!user.managerID) user.managerID = "";
-    return this.afs.doc<User>(`users/${user.uid}`).set(user).catch(err => this.error(err))
   }
 
   emailLogin(email: string, password: string) {
     return this.afAuth.auth.signInWithEmailAndPassword(email, password).catch(err => this.error(err))
   }
 
-  // private async oAuthLogin(provider) {
-  //   const credential = await this.afAuth.auth.signInWithPopup(provider);
-  //   return this.updateUserData(credential.user);
-  // }
+  googleLogin() {
+    const provider = new auth.GoogleAuthProvider();
+    return this.oAuthLogin(provider);
+  }
 
-  private updateUserData(user: User) {
-    return this.afs.doc<User>(`users/${user.uid}`).set(user, { merge: true }).catch(err => this.error(err))
+  facebookLogin() {
+    const provider = new auth.FacebookAuthProvider();
+    return this.oAuthLogin(provider);
+  }
+
+  private oAuthLogin(provider: auth.AuthProvider) {
+    return this.afAuth.auth.signInWithPopup(provider).then(cred => {
+      const credential = cred;
+      return this.createUser(credential.user);
+    })
+    .catch(err => this.error(err))
   }
 
   signOut() {

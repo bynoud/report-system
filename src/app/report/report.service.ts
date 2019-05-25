@@ -87,7 +87,7 @@ export class ReportService implements OnDestroy {
                     resolve([tasks, unsub]);
                 },
                 // error
-                err => { this.error(err); reject(err) }
+                err => { this.error(err, "taskupdate"); reject(err) }
             )
         })
         // return this.fs.collection(`reports/${userID}/tasks`)
@@ -332,7 +332,7 @@ export class ReportService implements OnDestroy {
 
         // First, get comment added within 7 days
         const latestSnaps = await query.where('at', '>', fromMillis(nowMillis() - SUMMARY_SINCE_MS))
-            .get().catch(err => this.msgService.error(err))
+            .get().catch(err => this.error(err))
         if (!latestSnaps) return [null, null];
         latestComms.push(...this.snapsToComment(latestSnaps))
 
@@ -351,7 +351,7 @@ export class ReportService implements OnDestroy {
                         return snaps.docs.length < max;
                     })
                     .catch(err => {
-                        this.error(err);
+                        this.error(err, "next comment");
                         return true;
                     })
             }
@@ -388,8 +388,8 @@ export class ReportService implements OnDestroy {
     //     return sub
     // }
     
-    error(err: any) {
-        console.error(err)
+    error(err: any, deb: string = "") {
+        console.error(deb, err)
         this.msgService.error("Something when wrong. This normally caused by an unhealthy network")
         return Promise.resolve(null)
     }

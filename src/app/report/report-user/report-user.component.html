@@ -1,4 +1,9 @@
 
+
+<div *ngIf="user" class="d-flex bg-light align-items-center mb-2">
+    <img [src]="user.photoURL" alt="User Avatar" class="mr-4" [style.width.px]="60" [style.height.px]="60">
+    <h1 class="display-5 font-weight-bold">{{user.displayName.toUpperCase()}}</h1>
+</div>
 <p *ngIf="!tasks"><app-loading size="150px"></app-loading></p>
 <div *ngIf="tasks">
     <h5 *ngIf="tasks.length==0">There's no Opened Reports</h5>

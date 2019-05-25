@@ -17,13 +17,15 @@ import { SharedModule } from './core/shared.module';
 import { PageMainComponent } from './core/main-pages/page-main.component';
 import { PageNotfoundComponent } from './core/main-pages/page-notfound.component';
 import { NavbarComponent } from './core/navbar/navbar.component';
+import { SidebarComponent } from './core/sidebar/sidebar.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     PageMainComponent,
     PageNotfoundComponent,
-    NavbarComponent
+    NavbarComponent,
+    SidebarComponent
   ],
   imports: [
     BrowserModule,

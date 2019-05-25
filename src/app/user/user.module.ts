@@ -5,7 +5,6 @@ import { EditUserComponent } from './edit-user/edit-user.component';
 import { CreateUserComponent } from './create-user/create-user.component';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { FlashMessageModule } from '../core/flash-message/flash-message.module';
 import { UserRoutingModule } from './user.route';
 import { SharedModule } from '../core/shared.module';
 import { UserActivateComponent } from './user-activate/user-activate.component';
@@ -21,7 +20,6 @@ import { UserActivateComponent } from './user-activate/user-activate.component';
     imports: [
         CommonModule,
         ReactiveFormsModule,
-        FlashMessageModule,
         UserRoutingModule,
         SharedModule
     ]
