@@ -1,0 +1,50 @@
+
+<div class="bg-light border-right border-top sidebar-wrapper"
+    [ngClass]="{'toggled': cfgService.toogleSidebar}">
+    <!-- <div class="sidebar-heading">Start Bootstrap </div> -->
+    
+
+    <div *ngIf="user">
+
+        <div class="d-flex flex-column align-items-center">
+            
+            <a role="button" class="active-user user-avatar"
+                [routerLink]="['/report']"
+                [style.background-image]="'url(' + user.photoURL + ')'"></a>
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                <strong>{{user.displayName}}</strong>
+            </a>
+            
+            <form class="dropdown-menu p-4">
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="cfgFullDate">
+                        <label for="cfgFullDate" class="form-check-label">
+                            Show Full Date
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="cfgHighlightNew">
+                        <label for="cfgHighlightNew" class="form-check-label">
+                            Highlight New Update
+                        </label>
+                    </div>
+                </div>
+
+                <button class="btn btn-sm btn-danger" role="button"
+                    (click)="onLogout()">Logout</button>
+                
+                </form>
+        </div>
+
+        <div class="list-group list-group-flush" [appLoadingBy]="loadingUsers$">
+            <a *ngFor="let u of otherUsers" 
+                class="list-group-item list-group-item-action list-group-item-light d-flex align-items-center"
+                [routerLink]="['/report', u.uid]">
+                <span class="user-avatar mr-2" [style.background-image]="'url(' + u.photoURL + ')'"></span>
+                {{u.displayName}}
+                <i class="fas fa-chevron-right ml-auto user-right-arrow"></i>
+            </a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,23 @@
+<div class="card-text">
+    <div class="dropdown show"
+        data-toggle="tooltip" data-placement="right" [title]="desc">
+
+        <a [className]="'btn dropdown-toggle btn-sm text-left target-status ' + target.status"
+            href="#" role="button" data-toggle="dropdown">
+            <span class=" align-items-center">
+            <i [className]="'ml-auto ' + icon"></i></span>
+        </a>
+
+        <div class="dropdown-menu target-status-items">
+            <h6 class="dropdown-header">{{desc}}</h6>
+            <a *ngFor="let next of nextTargets"
+                class="dropdown-item text-left" [style.cursor]="'pointer'"
+                [class.active]="next.name == target.status"
+                (click)="submitStatus(next.name)">
+                {{next.desc}}</a>
+        </div>
+
+        <span [className]="'target-text ' + target.status">{{target.desc}}</span>
+
+    </div>
+</div>

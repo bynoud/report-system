@@ -1,0 +1,34 @@
+
+<div class="collapse" id="report-comments-{{task.uid}}" data-parent="#report-collapse-parent">
+
+    <hr>
+    <div *ngIf="commUnsubFn!=null" [appLoadingBy]="loadingLatest$">
+        <div class="d-flex flex-column bg-info-light">
+            <p *ngIf='latestComments.length==0' class="card-text text-system ml-auto text-white">- There's no Comments in last 7 days</p>
+            <app-report-comment *ngFor="let comm of latestComments" 
+                [task]="task" [comm]="comm"></app-report-comment>
+        </div>
+
+        <div *ngIf="comments.length>0" class="bg-light" [appLoadingBy]="loadingComment$">
+            <app-report-comment *ngFor="let comm of comments"
+                [task]="task" [comm]="comm"></app-report-comment>
+
+            <div class="d-flex flex-column">
+                <a *ngIf="!isLastComment" (click)="getNextComments()" [routerLink]="" class="ml-auto">... More</a>
+                <span *ngIf="isLastComment" class="text-system ml-auto">- End of comments section</span>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Add new comment -->
+    <hr>
+    <div [appLoadingBy]="submitingComment$">
+        <form #commForm="ngForm" (ngSubmit)="submitNewComment()" class="d-flex flex-column">
+            <textarea type="text" class="form-control" rows="3" required
+            [(ngModel)]="model.newComment" name="newComment" placeholder="Add your comment"></textarea>
+            <button class="btn btn-primary ml-auto" type="submit" [disabled]="!commForm.valid">Add Comment</button>
+        </form>
+    </div>
+
+</div>

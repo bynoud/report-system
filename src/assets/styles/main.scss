@@ -1,0 +1,31 @@
+
+@import './bootstrap-restyle.scss';
+
+body {
+  /* light font */
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 400;
+
+  /* preserve for top navbar */
+  margin-top: 4rem !important;
+}
+
+#main-content {
+  min-width: 100vw;
+}
+@media (min-width: 768px) {
+  #main-content {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+
+
+.text-system {
+  color: var(--gray);
+  font-style: italic;
+  font-weight: 300;
+  
+}
+

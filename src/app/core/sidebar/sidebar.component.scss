@@ -1,0 +1,58 @@
+.sidebar-wrapper {
+  /* min-height: 100vh; */
+  margin-left: -15rem;
+  transition: margin .25s ease-out;
+}
+  
+.sidebar-wrapper .sidebar-heading {
+  padding: 0.875rem 1.25rem;
+  // font-size: 1.2rem;
+}
+  
+.sidebar-wrapper .list-group {
+  width: 15rem;
+}
+  
+  
+.sidebar-wrapper.toggled {
+  margin-left: 0;
+}
+
+// Medium devices (tablets, 768px and up)
+// we want to always display it
+@media (min-width: 768px) {
+  .sidebar-wrapper {
+    margin-left: 0;
+  }
+
+
+  .sidebar-wrapper.toggled {
+    margin-left: 0rem;
+  }
+}
+  
+
+.user-avatar {
+  /* fill the container, preserving aspect ratio, and cropping to fit */
+  background-size: cover;
+  /* center the image vertically and horizontally */
+  background-position: top center;
+  /* round the edges to a circle with border radius 1/2 container size */
+  border-radius: 50%;
+  /* make a square container */
+  width: 2rem;
+  height: 2rem;
+  display: inline-block;
+}
+
+.user-avatar.active-user {
+  /* make a square container */
+  width: 4rem;
+  height: 4rem;
+}
+
+.user-right-arrow {
+  font-size: x-large;
+  margin-left: auto;
+  transform: scale(0.5,1);
+}

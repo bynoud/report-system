@@ -1,0 +1,50 @@
+<nav class="navbar navbar-dark bg-dark fixed-top">
+  <div class="container">
+      <!-- <a class="navbar-brand font-weight-bold" href="#">REPORTS</a> -->
+      <!-- <a class="navbar-toggler" data-toggle="collapse" data-target=".dual-collapse2">
+          <span class="navbar-toggler-icon"></span>
+      </a> -->
+
+      <a class="navbar-toggler-icon mr-4 d-md-none" (click)="toggleSidebar()"></a>
+
+      <!-- left links -->
+      <!-- <div class="collapse navbar-collapse w-100 dual-collapse2 navbar-items-left order-2 order-md-1"> -->
+      <!-- <div class="collapse navbar-collapse w-100 dual-collapse2"> -->
+          <div class="navbar-nav mr-auto">
+
+              <!-- <a class="nav-item nav-link active mt-3 mt-md-0 user-avatar"
+                [routerLink]="['/report']"
+                [style.background-image]="'url(' + user.photoURL + ')'"
+              ></a> -->
+              <a class="nav-item nav-link" [routerLink]="['/report']">REPORTER</a>
+
+              <!-- <div class="nav-item dropdown" dropdown>
+                  <a class="nav-link dropdown-toggle" role="button" href="#" data-toggle="dropdown">
+                      OTHERS <span class="caret"></span>
+                  </a>
+                  <div class="dropdown-menu">
+                      <a class="dropdown-item d-flex align-items-center" *ngFor="let u of otherUsers"
+                          [routerLink]="['/report', u.uid]" >
+                        <span class="user-avatar mr-2" [style.background-image]="'url(' + u.photoURL + ')'"></span>
+                        {{u.displayName.toUpperCase()}}</a>
+                  </div>
+              </div>
+
+              <a class="nav-item nav-link" [routerLink]="['/report/sum']">SUMMARY</a> -->
+          </div>
+
+          <div class="navbar-nav ml-auto" *ngIf="ready">
+              <ng-template [ngIf]="user" [ngIfElse]="forSignIn">
+                <a class="nav-item nav-link fas fa-plus" (click)="onNewTask()"
+                  [style.font-size]="'1.5rem'"
+                  data-toggle="tooltip" title="Add new Task" data-placement="bottom"></a>
+                <!-- <a class="nav-item nav-link" (click)="onLogout()">LOGOUT</a> -->
+              </ng-template>
+              <ng-template #forSignIn>
+                <!-- <a class="nav-item nav-link" [routerLink]="['/user']">LOGIN</a> -->
+                <!-- <a *ngIf="ready" class="nav-item nav-link" [routerLink]="['/user/new']">REGISTER</a> -->
+              </ng-template>
+          </div>
+      <!-- </div> -->
+  </div>
+</nav>
