@@ -67,7 +67,7 @@ export function dateFormat(timestamp: firestore.Timestamp) {
 }
 
 export function dateToSince(time: firestore.Timestamp | number | string) {
-    let now = new Date(nowMillis());
+    let now = nowTimestamp().toDate();
     let ms: number;
     if (typeof(time) == "string") {
         ms = +time;
@@ -77,7 +77,10 @@ export function dateToSince(time: firestore.Timestamp | number | string) {
         ms = time
     }
     let days = (ms - now.valueOf()) / DAY_MS;
-    let then = new Date(ms);
+    let then = fromMillis(ms).toDate();
+
+    console.log('datesince', now.getFullYear(), then.getFullYear());
+    
 
     if (now.getFullYear() > then.getFullYear()) return "Years ago"
     else if (now.getMonth() > then.getMonth()) return `${now.getMonth() - then.getMonth()} months ago`
@@ -88,7 +91,7 @@ export function dateToSince(time: firestore.Timestamp | number | string) {
 
 
 export interface DueDate {
-    readonly at : Datetime,
+    at : Datetime,
     by : string | User,
     due : Datetime,
     readonly uid: string,
@@ -103,9 +106,9 @@ export interface Target {
 
 export type CommentType = "NewTask" | "CloseTask" | "NewTarget" | "UpdateTarget" | "Redue" | "Comment" | "CloseTarget";
 export interface Comment {
-    readonly at : Datetime,
+    at : Datetime,
     by : string | User,
-    readonly type: CommentType,
+    type: CommentType,
     text : string,
     readonly uid: string,
 }

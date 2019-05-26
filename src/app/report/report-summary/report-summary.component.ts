@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ReportService, ReportSummary, ReportSummaries } from '../report.service';
 import { Subscription } from 'rxjs';
 import { User } from 'src/app/models/user';
@@ -8,9 +8,11 @@ import { User } from 'src/app/models/user';
   templateUrl: './report-summary.component.html',
   styleUrls: ['./report-summary.component.css'],
 })
-export class ReportSummaryComponent implements OnInit {
+export class ReportSummaryComponent implements OnInit, OnDestroy {
 
-  summaries: ReportSummaries;
+  summaries: ReportSummaries[] = [];
+  unsubFns: (()=>void)[];
+  ready = false;
 
   constructor(
     private reportService: ReportService,
@@ -19,18 +21,17 @@ export class ReportSummaryComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.reportService.getSummary().then(sums => this.summaries = sums)
+    console.log(this.unsubFns, this.ready);
+    
+    this.reportService.getSummaries(this.summaries)
+      .then(fns => {
+        this.unsubFns = fns;
+        this.ready = true;
+      })
   }
 
-  // groupByUser(tasks: Task[]) {
-  //   var sum = {};
-  //   tasks.forEach(task => {
-  //     var u = task.userID;
-  //     if (!(u in sum)) sum[u] = [];
-  //     sum[u].push(task)
-  //   })
-  //   return sum
-  // }
-
+  ngOnDestroy() {
+    this.unsubFns.forEach(fn => fn())
+  }
 
 }

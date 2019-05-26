@@ -15,13 +15,14 @@ export class ReportCommentComponent implements OnInit {
   text: string;
   byDiffUser: boolean;
 
+  dateText: string;
+
   constructor(
   ) { }
 
   ngOnInit() {
     let txt = this.comm.text;
     let secs = txt.split('@@');
-    let desc = `[${this.task.project}] ${this.task.title}`;
 
     if (typeof(this.comm.by) == 'string') {
       this.byDiffUser = this.task.userID != this.comm.by;
@@ -37,14 +38,14 @@ export class ReportCommentComponent implements OnInit {
       // case "Comment":
       //   this.text = txt;
       case "NewTask":
-        txt = `Opened new task "${desc}"`;
+        txt = `Opened this Task`;
         break;
       case "CloseTask":
-        txt = `Closed task "${desc}"`;
+        txt = `Closed this Task`;
         break;
       case "NewTarget":
         // `${taskref.id}@@${status}@@${desc}`
-        txt = `Added new Target "${secs[2]}" to Task "${desc}"`;
+        txt = `Added new Target "${secs[2]}"`;
         break;
       case "UpdateTarget":
         // `${target.uid}@@${target.desc}@@${target.status}@@${status}`
@@ -58,7 +59,9 @@ export class ReportCommentComponent implements OnInit {
         // there's no known used case of "CloseTarget", assume it not happend
         this.systemComm = false;
     }
+
     this.text = txt;
+    this.dateText = dateToSince(this.comm.at)
   }
 
   msFormat(ms: number) {
@@ -70,6 +73,8 @@ export class ReportCommentComponent implements OnInit {
   }
 
   dateSince(time) {
+    console.log("call datesince", this.task);
+    
     return dateToSince(time)
   }
 

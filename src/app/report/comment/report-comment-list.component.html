@@ -4,7 +4,7 @@
     <hr>
     <div *ngIf="commUnsubFn!=null" [appLoadingBy]="loadingLatest$">
         <div class="d-flex flex-column bg-info-light">
-            <p *ngIf='latestComments.length==0' class="card-text text-system ml-auto text-white">- There's no Comments in last 7 days</p>
+            <p *ngIf='latestComments.length==0' class="card-text text-system ml-auto">- There's no Comments in last 7 days</p>
             <app-report-comment *ngFor="let comm of latestComments" 
                 [task]="task" [comm]="comm"></app-report-comment>
         </div>

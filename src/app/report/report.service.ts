@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from "@angular/core";
 import { AngularFirestore, QuerySnapshot } from '@angular/fire/firestore';
 import { Task, Status, fromMillis, Target,
-    CommentType, DueDate, Comment, nowMillis, nowTimestamp, serverTime } from 'src/app/models/reports';
+    CommentType, DueDate, Comment, nowMillis, nowTimestamp, serverTime, dateFormat } from 'src/app/models/reports';
 import { firestore } from 'firebase';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { map, catchError } from 'rxjs/operators';
@@ -12,7 +12,8 @@ import { User } from '../models/user';
 const SUMMARY_SINCE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type ReportSummary = {task: Task, comms: Comment[]}
-export type ReportSummaries = {[uid: string]: {user: User, sums: ReportSummary[]}}
+export type ReportSummaries = {user: User, sums: ReportSummary[]}
+// export type ReportSummaries = {[uid: string]: {user: User, sums: ReportSummary[]}}
 
 @Injectable()
 export class ReportService implements OnDestroy {
@@ -154,38 +155,130 @@ export class ReportService implements OnDestroy {
         return obj;
     }
 
-    // Gather comment in last 7 days, group by user
-    async getSummary(): Promise<ReportSummaries> {
-        var sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
-        const taskSnaps = await this.fs.collectionGroup('tasks')
-            .where('updatedAt', ">", sinceDate).orderBy("updatedAt", "desc").get()
-            // FIXME .catch(err => this.error(err))
-        if (!taskSnaps) return Promise.resolve({})
+    // Get summary comments for a specified task. Result is directly updated
+    // return a unsub function
+    private async getSummary(taskDoc: firestore.QueryDocumentSnapshot,
+        sinceDate: firestore.Timestamp, allSums: ReportSummaries[]) {
+        const task: Task = <Task>taskDoc.data();
 
-        // console.log("sum", taskSnaps);
-        var sums: ReportSummaries = {};
-        for (const doc of taskSnaps.docs) {
-            let sum: ReportSummary = {task: <Task>doc.data(), comms: []};
-            let uid = sum.task.userID;
-
-            const comSnaps = await doc.ref.collection('comments')
-                .where('at', '>', sinceDate).orderBy('at', 'desc').get()
-                //FIXME .catch(err => this.error(err))
-            if (comSnaps) {
-                // console.log("  comm", comSnaps);
-                for (let doc of comSnaps.docs) {
-                    sum.comms.push(await this.populateComment(<Comment>doc.data()))
-                }
-                if (!(uid in sums)) sums[uid] = {
-                    user: await this.authService.getUser$(uid),
-                    sums: [],
-                };
-                sums[uid].sums.push(sum)
-            }
+        let sums: ReportSummaries = allSums.find(s => s.user.uid == task.userID)
+        if (!sums) {
+            console.warn("not found", task.userID, allSums);
+            
+            let user = await this.authService.getUser$(task.userID);
+            sums = {user: user, sums: []}
+            allSums.push(sums)
         }
+
         
-        return sums;
+        // let query = taskDoc.ref.collection('comments')
+        //     .where('at', '>', sinceDate).orderBy('at', 'desc')
+
+        // // first get current list of comments
+        // let comms = await query.get().then(async snaps => {
+        //     return Promise.all(
+        //         snaps.docs.map(doc => this.populateComment(<Comment>doc.data()))
+        //     )
+        // })
+
+        let sum: ReportSummary = {task: task, comms: []};
+        sums.sums.push(sum);
+
+        // // on new comment, add it to the top
+        // if (comms.length>0) query = query.startAfter(comms[comms.length-1])
+        // return query.onSnapshot(snaps => {
+        //     Promise.all(
+        //         snaps.docs.map(doc => this.populateComment(<Comment>doc.data()))
+        //     ).then(comms => sum.comms.unshift(...comms))
+        // })
+
+        return taskDoc.ref.collection('comments')
+            .where('at', '>', sinceDate).orderBy('at')
+            .onSnapshot(async commSnaps => {
+                console.warn("comment changed", commSnaps.docChanges());
+                // only change is 'added' for comment
+                commSnaps.docChanges().forEach(change => {
+                    // use 'asc' order, then unshift to re-order.
+                    // this to make sure new comment is put at the start of array
+                    this.populateComment(<Comment>change.doc.data())
+                        .then(comm => sum.comms.unshift(comm))
+                })
+            }, err => this.error(err))
     }
+
+    switchSummary(taskDoc: firestore.QueryDocumentSnapshot,
+        oldIndex: number, newIndex: number, allSums: ReportSummaries[]) {
+        // TODO : how to switch, base on task-index, map to user index?
+        // const task: Task = <Task>taskDoc.data();
+        // let sums: ReportSummaries = allSums.find(s => s.user.uid == task.userID)
+    }
+
+    async getSummaries(allSums: ReportSummaries[]) {
+        return new Promise<(()=>void)[]>((resolve) => {
+            const sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
+            let unsubFns: (()=>void)[] = [];
+            unsubFns.push(this.fs.collectionGroup('tasks')
+                .where('updatedAt', ">", sinceDate).orderBy("updatedAt", "desc")
+                .onSnapshot(tasksSnaps => {
+                    let sumPromises: Promise<void>[] = [];
+                    tasksSnaps.docChanges().forEach(change => {
+                        console.log("change", change);
+                        switch (change.type) {
+                            
+                            // add new task subcription on 'add' event
+                            case 'added':
+                                sumPromises.push(this.getSummary(change.doc, sinceDate, allSums)
+                                    .then(fn => {unsubFns.push(fn)})
+                                    .catch(err => this.error(err)))
+                                break;
+                            // switch position on update
+                            case 'modified':
+                                this.switchSummary(change.doc, change.oldIndex, change.newIndex, allSums);
+                                break;
+                        }
+                    })
+                    
+                    Promise.all(sumPromises).then(() => {
+                        resolve(unsubFns);
+                    })
+                })
+            );
+        })
+        
+    }
+
+    // // Destruction way: Gather comment in last 7 days, group by user
+    // async getSummary_Destruction(): Promise<ReportSummaries> {
+    //     var sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
+    //     const taskSnaps = await this.fs.collectionGroup('tasks')
+    //         .where('updatedAt', ">", sinceDate).orderBy("updatedAt", "desc").get()
+    //         // FIXME .catch(err => this.error(err))
+    //     if (!taskSnaps) return Promise.resolve({})
+
+    //     // console.log("sum", taskSnaps);
+    //     var sums: ReportSummaries = {};
+    //     for (const doc of taskSnaps.docs) {
+    //         let sum: ReportSummary = {task: <Task>doc.data(), comms: []};
+    //         let uid = sum.task.userID;
+
+    //         const comSnaps = await doc.ref.collection('comments')
+    //             .where('at', '>', sinceDate).orderBy('at', 'desc').get()
+    //             //FIXME .catch(err => this.error(err))
+    //         if (comSnaps) {
+    //             // console.log("  comm", comSnaps);
+    //             for (let doc of comSnaps.docs) {
+    //                 sum.comms.push(await this.populateComment(<Comment>doc.data()))
+    //             }
+    //             if (!(uid in sums)) sums[uid] = {
+    //                 user: await this.authService.getUser$(uid),
+    //                 sums: [],
+    //             };
+    //             sums[uid].sums.push(sum)
+    //         }
+    //     }
+        
+    //     return sums;
+    // }
 
     // values = {project, title, desc, dueMs, targets[{desc:}]}
     addTask(userID: string, values: any): Promise<Task> {
@@ -209,8 +302,14 @@ export class ReportService implements OnDestroy {
         bw.set(taskRef, task);
         targets.forEach(target => this.addTarget(task, target.desc, "PENDING", bw))
         this.addDuedate(taskRef.path, dueMs, bw);
-        this.addComm(task, "NewTask", `${task.uid}@@${project}@@${title}`, bw)
-        return bw.commit().then(() => { return task }).catch(this.raise)
+        // to make sure task is added before new comment in timestamp, separate them
+        // this.addComm(task, "NewTask", `${task.uid}@@${project}@@${title}`, bw)
+        return bw.commit()
+            .then(() =>
+                this.addComm(task, "NewTask", `${task.uid}@@${project}@@${title}`)
+            )
+            .then(() => task)
+            .catch(this.raise)
     }
 
     private addDuedate(taskPath: string, dueMs: number, batch: firestore.WriteBatch) {
@@ -277,7 +376,8 @@ export class ReportService implements OnDestroy {
         batch.set(commref, {
             // serverTime() will only valid after the entry submitted
             // this cause error when we subcribe to a valueChanges(), since it return a local value with 'null'
-            uid: commref.id, at: serverTime(), by: this.userID, type, text
+            uid: commref.id, by: this.userID, type, text,
+            at: serverTime()
         })
         // assume a comment is added mean task still open
         batch.update(this.fs.doc(taskdoc), {updatedAt: serverTime(),
@@ -318,7 +418,10 @@ export class ReportService implements OnDestroy {
     // [0] next() => boolean, when called will add next comments to array, return true if this is last comment
     // [1] unsub() => void, use to detach listener
     private snapsToComment(snaps: firestore.QuerySnapshot) {
-        return snaps.docs.map(doc => <Comment>doc.data())
+        return snaps.docs.map(doc => {
+            const comm = <Comment>doc.data();
+            return comm;
+        })
     }
 
     async getPaginationComments$(task: Task, max: number, latestComms: Comment[], comms: Comment[], type: CommentType = null):
@@ -358,14 +461,20 @@ export class ReportService implements OnDestroy {
             }
         await nextComments();   // run it to get initial value
 
-        // We only add comment, there's no other activities here
         const newCommentQuery = firstSeen ? query.endBefore(firstSeen) : query;
         const newComUnsub = newCommentQuery.onSnapshot(
             snaps => {
                 snaps.docChanges().forEach(change => {
-                    // just to make sure
+                    // for serverTime(), initial value will be EPOC time,
+                    // then an 'modified' event will fired to correct value when server updated
+                    console.warn("comment changed", change);
+                    const comm = <Comment>change.doc.data();
                     if (change.type == "added") {
-                        latestComms.unshift(<Comment>change.doc.data())
+                        console.warn("comment added", change.doc);
+                        latestComms.unshift(comm)
+                    } else if (change.type == "modified") {
+                        // there's nno reordering, only modify of time
+                        latestComms[change.oldIndex].at = comm.at;
                     }
                 })
             },
