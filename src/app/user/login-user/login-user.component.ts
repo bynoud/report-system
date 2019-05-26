@@ -3,6 +3,7 @@ import { AuthService } from 'src/app/core/services/auth.service';
 import { Router } from '@angular/router';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { Subscription, Subject, BehaviorSubject, ReplaySubject } from 'rxjs';
+import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 
 @Component({
   selector: 'app-login-user',
@@ -14,6 +15,7 @@ export class LoginUserComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService,
+    private msgService: FlashMessageService
   ) {
    }
 
@@ -72,11 +74,21 @@ export class LoginUserComponent implements OnInit, OnDestroy {
   }
 
   googleLogin() {
+    this.loading$.next(true);
     this.authService.googleLogin()
+      .catch(err => {
+        this.loading$.next(false)
+      })
   }
 
   facebookLogin() {
+    this.loading$.next(true);
     this.authService.facebookLogin()
+      .catch(err => {
+        console.warn("fb", err);
+        this.msgService.error(err.message);
+        this.loading$.next(false)
+      })
   }
 
 }

@@ -2,7 +2,8 @@
     <div class="dropdown show"
         data-toggle="tooltip" data-placement="right" [title]="desc">
 
-        <a [className]="'btn dropdown-toggle btn-sm text-left target-status ' + target.status"
+        <a class="btn dropdown-toggle btn-sm text-left target-status"
+            [ngClass]="[allowModify ? '' :'disabled', target.status]"
             href="#" role="button" data-toggle="dropdown">
             <span class=" align-items-center">
             <i [className]="'ml-auto ' + icon"></i></span>

@@ -68,18 +68,17 @@ export function dateFormat(timestamp: firestore.Timestamp) {
 
 export function dateToSince(time: firestore.Timestamp | number | string) {
     let now = nowTimestamp().toDate();
-    let ms: number;
+    let then: Date;
     if (typeof(time) == "string") {
-        ms = +time;
+        then = new Date(+time);
     } else if (time instanceof firestore.Timestamp) {
-        ms = time.toMillis();
+        then = time.toDate();
     } else {
-        ms = time
+        then = new Date(time);
     }
-    let days = (ms - now.valueOf()) / DAY_MS;
-    let then = fromMillis(ms).toDate();
+    let days = (now.valueOf() - then.valueOf()) / DAY_MS;
 
-    console.log('datesince', now.getFullYear(), then.getFullYear());
+    console.log('datesince', now, then, now.valueOf(), then.valueOf(), days);
     
 
     if (now.getFullYear() > then.getFullYear()) return "Years ago"

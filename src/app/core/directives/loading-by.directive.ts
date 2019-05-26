@@ -8,12 +8,12 @@ import { LoadingComponent } from '../loading/loading.component';
   selector: 'app-loading-by-content',
   template: `
   <ng-template #loadingContainer>
-  <div class="loading-container"  [style.display]="context.hide ? 'none' : 'flex'">
+  <div class="loading-container">
     <!-- <div class="spinning-square" [style.width.px]="context.size" [style.height.px]="context.size">
       <div class="spinning-loader"></div>
     </div> -->
     <img src='assets/loading.svg' [ngStyle]="{'max-width': '80%', 'max-height': '80%'}">
-    <p *ngIf="context.text">{{context.text}}</p>
+    <p *ngIf="text">{{text}}</p>
   </div>
   </ng-template>
 `,
@@ -40,6 +40,8 @@ export class LoadingByContentComponent {
 
   @Input() outletEle: any;
   @Input() context: {text: string, hide: boolean};
+  @Input() display: string;
+  @Input() text: string;
 
   constructor(
     private componentFactoryResolver: ComponentFactoryResolver,
@@ -48,27 +50,36 @@ export class LoadingByContentComponent {
     private viewContainerRef: ViewContainerRef
   ){}
 
-  ngOnInit() {    
-    // Create a portalHost from a DOM element
-    this.portalHost = new DomPortalHost(this.outletEle,
-      this.componentFactoryResolver,
-      this.appRef,
-      this.injector
-    )
+  // ngOnInit() {    
+  //   console.error("loading comp create");
+    
+  //   // Create a portalHost from a DOM element
+  //   this.portalHost = new DomPortalHost(this.outletEle,
+  //     this.componentFactoryResolver,
+  //     this.appRef,
+  //     this.injector
+  //   )
 
-    // Locate the component factory for the HeaderComponent
-    this.portal = new TemplatePortal(
-      this.loadingContainerTmpl,
-      this.viewContainerRef,
-    );
+  //   // Locate the component factory for the HeaderComponent
+  //   this.portal = new TemplatePortal(
+  //     this.loadingContainerTmpl,
+  //     this.viewContainerRef,
+  //   );
 
-    // Attach portal to host
-    this.portalHost.attach(this.portal);
-  }
+  //   // Attach portal to host
+  //   this.portalHost.attach(this.portal);
+  // }
 
-  ngOnDestroy(): void {
-    this.portalHost.detach();
-  }
+  // debug() {
+  //   console.warn(this.display);
+    
+  // }
+
+  // ngOnDestroy(): void {
+  //   console.error("loading comp destroy");
+    
+  //   this.portalHost.detach();
+  // }
 }
 
 @Directive({
@@ -92,13 +103,16 @@ export class LoadingByDirective implements OnInit {
 
   ngOnInit() {
     // this.loadingEle = this.createLoadingElement()
+    console.error("loading directive created");
+    
 
-    this.createLoadingElement();
+    const comp = this.createLoadingElement();
     this.subs = this.loadingChanged$.subscribe(val => {
-      console.log("loading change", val, this.element.nativeElement);
+      console.log("loading change", val, this.element.nativeElement, comp);
       
-      if (val) this.loadingCtx.hide = false;
-      else this.loadingCtx.hide = true;
+      if (val) comp.style.display = 'flex';
+      else comp.style.display = 'none';
+
     })
 
   }
@@ -109,14 +123,21 @@ export class LoadingByDirective implements OnInit {
     const factory = this.factoryResolve.resolveComponentFactory(LoadingByContentComponent);
     // const component = factory.create(this.vcRef.injector);
     const component = this.vcRef.createComponent(factory, null, this.vcRef.injector);
-    this.loadingCtx = {text: this.loadingText, hide: false}
-    component.instance.context = this.loadingCtx;
-    component.instance.outletEle = outletEle;
-    return component;
+    // this.loadingCtx = {text: this.loadingText, hide: false}
+    // component.instance.context = this.loadingCtx;
+    // component.instance.outletEle = outletEle;
+    // component.location.nativeElement.style.display = 'none';
+    const templ = this.vcRef.createEmbeddedView(component.instance.loadingContainerTmpl, {text: "TBD"});
+    console.warn("rootnodes", templ.rootNodes);
+    const loadingEle = templ.rootNodes[0];
+    outletEle.appendChild(loadingEle);
+    return loadingEle;
   }
 
 
   ngOnDestroy() {
+    console.error("loading directive destroy");
+    
     this.subs.unsubscribe();
   }
 

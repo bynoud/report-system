@@ -25,6 +25,7 @@
             </button>
 
             <button type="button" class="btn dropdown-toggle btn-round-right" data-toggle="dropdown"
+              [ngClass]="{'disabled': !allowModify}"
               [style.color]="taskStatus.iconColor" [style.borderColor]="taskStatus.iconColor"
               [appLoadingBy]="loadingRedue$">
                 <span data-toggle="tooltip" data-placement="right" title="Click to open Re-schedule form">
@@ -57,11 +58,11 @@
 
     <!-- task targets -->
     <div *ngFor="let target of targets">
-      <app-task-target [task]="task" [target]="target"></app-task-target>
+      <app-task-target [task]="task" [target]="target" [allowModify]="allowModify"></app-task-target>
     </div>
 
     <!-- Comments -->
-    <app-report-comment-list [task]="task" ></app-report-comment-list>
+    <app-report-comment-list [task]="task" [allowNew]="allowModify"></app-report-comment-list>
     <!-- <div id="report-item--{{task.uid}}-collapse" class="collapse" data-parent="#report-collapse-parent">
 
       <p *ngIf='comments.length==0' class="card-text text-system ml-auto">- There's no Comment</p>

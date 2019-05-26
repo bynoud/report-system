@@ -8,7 +8,7 @@ import { Observable, of, Subject, BehaviorSubject, ReplaySubject, Subscription }
 import { switchMap, first, map, mergeMap, catchError, takeLast, concat, take } from 'rxjs/operators';
 import { User } from 'src/app/models/user';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
-import { auth } from 'firebase';
+import { auth, firestore } from 'firebase';
 import { serverTime } from 'src/app/models/reports';
 import { AngularFireFunctions } from '@angular/fire/functions';
 
@@ -17,7 +17,7 @@ import { AngularFireFunctions } from '@angular/fire/functions';
 @Injectable({ providedIn: 'root' })
 export class AuthService implements CanActivate {
   // user$: Observable<User>;
-  private fs: firebase.firestore.Firestore;
+  private fs: firestore.Firestore;
 
   private _authSub: Subscription;
   private _activeUser$ = new ReplaySubject<User>(1);  // only replay the last value
@@ -94,10 +94,10 @@ export class AuthService implements CanActivate {
     return Promise.reject(err);
   }
 
-  errorPromise(err: any) {
+  raise(err: any) {
     this.msgService.error(err);
     console.error("errpromise",err);
-    throw (err);
+    return err;
   }
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
@@ -168,6 +168,10 @@ export class AuthService implements CanActivate {
     }
   }
 
+  getActiveUser$() {
+    return this._activeUser$.pipe(first()).toPromise()
+  }
+
 
   emailSignUp(displayName: string, email: string, photoURL: string, managerID: string, password: string): Promise<void> {
     this.unsubAuthState();
@@ -176,11 +180,12 @@ export class AuthService implements CanActivate {
         return this.createUser(cred, {displayName, photoURL, managerID, email});
       })
       .then(() => this.subAuthState())
-      .catch(err => this.error(err))
+      // .catch(err => {throw this.raise(err)})
   }
 
   emailLogin(email: string, password: string) {
-    return this.afAuth.auth.signInWithEmailAndPassword(email, password).catch(err => this.error(err))
+    return this.afAuth.auth.signInWithEmailAndPassword(email, password)
+      // .catch(err => {throw this.raise(err)})
   }
 
   googleLogin() {
@@ -205,7 +210,7 @@ export class AuthService implements CanActivate {
     .then(() => {
       this.subAuthState()
     })
-    .catch(err => this.error(err))
+    // .catch(err => {throw this.raise(err)})
   }
 
   signOut() {

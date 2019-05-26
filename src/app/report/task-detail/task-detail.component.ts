@@ -45,6 +45,7 @@ const STATUS_CFGS: {[s:string]: {desc: string, icon: string, color: string}} = {
 export class TaskDetailComponent implements OnInit, OnDestroy {
   @Input() task: Task;
   @Input() index: number;
+  @Input() allowModify: boolean;
 
   comments: Comment[] = [];
   nextCommentsFn: () => Promise<boolean>;

@@ -3,13 +3,14 @@
 
     <hr>
     <div *ngIf="commUnsubFn!=null" [appLoadingBy]="loadingLatest$">
-        <div class="d-flex flex-column bg-info-light">
+        <div class="d-flex flex-column bg-light">
             <p *ngIf='latestComments.length==0' class="card-text text-system ml-auto">- There's no Comments in last 7 days</p>
             <app-report-comment *ngFor="let comm of latestComments" 
                 [task]="task" [comm]="comm"></app-report-comment>
         </div>
 
-        <div *ngIf="comments.length>0" class="bg-light" [appLoadingBy]="loadingComment$">
+        <div *ngIf="comments.length>0" [appLoadingBy]="loadingComment$">
+            <hr>
             <app-report-comment *ngFor="let comm of comments"
                 [task]="task" [comm]="comm"></app-report-comment>
 
@@ -22,8 +23,8 @@
 
 
     <!-- Add new comment -->
-    <hr>
-    <div [appLoadingBy]="submitingComment$">
+    <div *ngIf="allowNew" [appLoadingBy]="submitingComment$">
+        <hr>
         <form #commForm="ngForm" (ngSubmit)="submitNewComment()" class="d-flex flex-column">
             <textarea type="text" class="form-control" rows="3" required
             [(ngModel)]="model.newComment" name="newComment" placeholder="Add your comment"></textarea>

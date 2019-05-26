@@ -1,5 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { Comment, Task, dateFormat, fromMillis, dateToSince } from 'src/app/models/reports';
+import { targetTransitionDesc } from '../task-detail/task-target.component';
+
 
 
 @Component({
@@ -49,7 +51,7 @@ export class ReportCommentComponent implements OnInit {
         break;
       case "UpdateTarget":
         // `${target.uid}@@${target.desc}@@${target.status}@@${status}`
-        txt = `Updated "${secs[2]}" -> "${secs[3]}" for Target "${secs[1]}"`;;
+        txt = `${targetTransitionDesc(secs[2], secs[3])} Target "${secs[1]}"`;;
         break;
       case "Redue":
         // `${task.due.toMillis()}@@${dueMs}`
@@ -62,6 +64,8 @@ export class ReportCommentComponent implements OnInit {
 
     this.text = txt;
     this.dateText = dateToSince(this.comm.at)
+    console.warn(this.comm, this.dateText);
+    
   }
 
   msFormat(ms: number) {

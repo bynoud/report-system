@@ -17,6 +17,7 @@ export class ReportUserComponent implements OnInit, OnDestroy {
   tasks: Task[];
   subs: Subscription[] = [];
   taskUnsubFn: () => void;
+  allowModify: boolean;
 
   tests: any[] = [];
   
@@ -28,14 +29,17 @@ export class ReportUserComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subs.push(this.route.params.subscribe( params => {
-      var userID = params['id'];
-      console.log("detal id", userID);
+      this.getTasks(params['id'])
+      // var userID = params['id'];
+      // console.log("detal id", userID);
 
-      if (userID) {
-        this.authService.getUser$(userID).then(user => this.getTasks(user))
-      } else {
-        this.subs.push(this.authService.activeUser$.subscribe(user => this.getTasks(user)))
-      }
+      // if (userID) {
+      //   this.isActive = false;
+      //   this.authService.getUser$(userID).then(user => this.getTasks(user))
+      // } else {
+      //   this.isActive = true;
+      //   this.subs.push(this.authService.activeUser$.subscribe(user => this.getTasks(user)))
+      // }
 
     }))
 
@@ -77,7 +81,10 @@ export class ReportUserComponent implements OnInit, OnDestroy {
     }
   }
 
-  async getTasks(user: User) {
+  async getTasks(userID: string) {
+    let actUser = await this.authService.getActiveUser$();
+    let user = userID ? await this.authService.getUser$(userID) : actUser;
+    this.allowModify = (user.uid == actUser.uid) || (user.managerID == actUser.uid);
     this.user = user;
     if (user) {
       [this.tasks, this.taskUnsubFn] = await this.reportService.getTaskUpdates(user.uid)

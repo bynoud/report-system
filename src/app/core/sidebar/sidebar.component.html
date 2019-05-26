@@ -40,7 +40,8 @@
         <div class="list-group list-group-flush" [appLoadingBy]="loadingUsers$">
             <a *ngFor="let u of otherUsers" 
                 class="list-group-item list-group-item-action list-group-item-light d-flex align-items-center"
-                [routerLink]="['/report', u.uid]">
+                [routerLink]="['/report', u.uid]"
+                routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
                 <span class="user-avatar mr-2" [style.background-image]="'url(' + u.photoURL + ')'"></span>
                 {{u.displayName}}
                 <i class="fas fa-chevron-right ml-auto user-right-arrow"></i>

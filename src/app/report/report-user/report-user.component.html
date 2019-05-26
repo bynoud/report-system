@@ -7,7 +7,8 @@
 <p *ngIf="!tasks"><app-loading size="150px"></app-loading></p>
 <div *ngIf="tasks">
     <h5 *ngIf="tasks.length==0">There's no Opened Reports</h5>
-    <app-task-detail *ngFor="let task of tasks; let i = index" [task]="task" [index]="i"></app-task-detail>
+    <app-task-detail *ngFor="let task of tasks; let i = index"
+        [task]="task" [index]="i" [allowModify]="allowModify"></app-task-detail>
 </div>
 
 <!-- <button (click)="testAdd()">Add</button>

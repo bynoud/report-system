@@ -3,7 +3,7 @@ import { Task, Comment } from 'src/app/models/reports';
 import { ReportService } from '../report.service';
 import { BehaviorSubject } from 'rxjs';
 
-const MAX_COMMENTS = 3; // paging 3 comments each
+const MAX_COMMENTS = 3; // number of comments each paging
 
 @Component({
     selector: 'app-report-comment-list',
@@ -17,7 +17,7 @@ export class ReportCommentListComponent implements OnInit, OnDestroy {
     latestComments: Comment[] = [];
     comments: Comment[] = [];
     nextCommentsFn: () => Promise<boolean>;
-    commUnsubFn: () => void;
+    commUnsubFn: any; //() => void;
     isLastComment: boolean;
 
     model = {newComment: ""};
@@ -32,6 +32,7 @@ export class ReportCommentListComponent implements OnInit, OnDestroy {
     ngOnInit() {
         if (this.allowNew == null) this.allowNew = true;
         if (this.showAll == null) this.showAll = false;
+        
         this.paginationComments();
     }
     
@@ -45,7 +46,7 @@ export class ReportCommentListComponent implements OnInit, OnDestroy {
 
     async paginationComments() {
         [this.nextCommentsFn, this.commUnsubFn] = await this.reportService.getPaginationComments$(
-            this.task, MAX_COMMENTS, this.latestComments, this.comments, 'Comment');
+            this.task, MAX_COMMENTS, this.latestComments, this.comments);
         this.loadingComment$.next(false);
         this.loadingLatest$.next(false);
         this.isLastComment = this.comments.length < MAX_COMMENTS;

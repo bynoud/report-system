@@ -353,7 +353,7 @@ export class ReportService implements OnDestroy {
         var taskref = this.fs.doc(`reports/${task.userID}/tasks/${task.uid}/targets/${target.uid}`);
         bw.update(taskref, {status})
         this.addComm(task, "UpdateTarget", `${target.uid}@@${target.desc}@@${target.status}@@${status}`, bw);
-        return bw.commit()//FIXME .catch(err => this.error(err))
+        return bw.commit().catch(err => this.error(err))
     }
 
     addComment(task: Task, comm: string) {
@@ -382,7 +382,7 @@ export class ReportService implements OnDestroy {
         // assume a comment is added mean task still open
         batch.update(this.fs.doc(taskdoc), {updatedAt: serverTime(),
             status: (type=="CloseTask")? "CLOSED" : "OPEN"})
-        if (doCommit) return batch.commit()//FIXME .catch(err => this.error(err))
+        if (doCommit) return batch.commit().catch(err => this.error(err))
         else return null
     }
 
@@ -425,7 +425,7 @@ export class ReportService implements OnDestroy {
     }
 
     async getPaginationComments$(task: Task, max: number, latestComms: Comment[], comms: Comment[], type: CommentType = null):
-            Promise<[()=>Promise<boolean>, ()=>void]> {
+            Promise<[()=>Promise<boolean>, any]> {
 
         const colRef = this.fs.collection(`reports/${task.userID}/tasks/${task.uid}/comments`);
         let query = type ? colRef.where('type', '==', type).orderBy('at', 'desc') :
@@ -450,6 +450,8 @@ export class ReportService implements OnDestroy {
             () => {
                 return query.startAfter(lastSeen).limit(max).get()
                     .then(snaps => {
+                        console.warn("comments next", snaps.docs, this.snapsToComment(snaps));
+                        
                         lastSeen = snaps.docs[snaps.size - 1];
                         comms.push(...this.snapsToComment(snaps));
                         return snaps.docs.length < max;
@@ -460,6 +462,8 @@ export class ReportService implements OnDestroy {
                     })
             }
         await nextComments();   // run it to get initial value
+        console.warn("here", lastSeen);
+        
 
         const newCommentQuery = firstSeen ? query.endBefore(firstSeen) : query;
         const newComUnsub = newCommentQuery.onSnapshot(
@@ -469,17 +473,29 @@ export class ReportService implements OnDestroy {
                     // then an 'modified' event will fired to correct value when server updated
                     console.warn("comment changed", change);
                     const comm = <Comment>change.doc.data();
-                    if (change.type == "added") {
-                        console.warn("comment added", change.doc);
+                    // DONT take the 'added' event, use 'modified' instead
+                    // if (change.type == "added") {
+                    //     console.warn("comment added", change.doc);
+                    //     latestComms.unshift(comm)
+                    // } else 
+                    if (change.type == "modified") {
                         latestComms.unshift(comm)
-                    } else if (change.type == "modified") {
-                        // there's nno reordering, only modify of time
-                        latestComms[change.oldIndex].at = comm.at;
                     }
                 })
             },
             err => this.error(err)
         )
+        // const newSubs = this.afs.collection<Comment>(`reports/${task.userID}/tasks/${task.uid}/comments`)
+        //     .stateChanges(['added', 'modified']).subscribe(actions => {
+        //             console.warn("new comment", actions);
+        //             latestComms.push(...actions.map(act => act.payload.doc.data()))
+        //         })
+        // const newSubs = this.afs.collection<Comment>(`reports/${task.userID}/tasks/${task.uid}/comments`)
+        //     .valueChanges().subscribe(vals => {
+        //             console.warn("new comment", vals);
+                    
+        //             latestComms.push(...vals)
+        //         })
 
         return [nextComments, newComUnsub];
     }

@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from "@angular/core";
-import { Task, Target, Status } from 'src/app/models/reports';
+import { Task, Target, Status, StatusList } from 'src/app/models/reports';
 import { ReportService } from '../report.service';
 
 const TARGET_CFGS: {[s: string]: {icon: string, desc: string, next: Status[]}} = {
@@ -36,6 +36,21 @@ const NEXT_TARGET_DESC = {
     DISCARDED: "Removed this Target with reason ...",
     DONE: "Mark this Target as Finished with comment ...",
 }
+
+export function targetTransitionDesc(cur: string, nxt: string) {
+  switch (nxt) {
+    case 'ONGOING':
+      return cur=='PENDING'? "Start" :
+              cur=='SUSPENDED' ? "Resume" : "Re-open";
+    case 'SUSPENDED':
+      return 'Suspend';
+    case 'DISCARDED':
+      return 'Remove';
+    case 'DONE':
+      return 'Finish'
+  }
+
+}
   
 @Component({
     selector: 'app-task-target',
@@ -46,6 +61,7 @@ export class TaskTargetComponent implements OnInit {
 
     @Input() task: Task;
     @Input() target: Target;
+    @Input() allowModify: boolean;
     icon: string;
     desc: string;
     nextTargets: {name: Status, desc: string}[];
@@ -55,16 +71,15 @@ export class TaskTargetComponent implements OnInit {
     ) {}
 
     ngOnInit() {
+      console.log(this.allowModify);
+      
         const stt = this.target.status;
         const cfg = TARGET_CFGS[stt];
         this.icon = cfg.icon;
         this.desc = cfg.desc;
         this.nextTargets = cfg.next.map<{name: Status, desc: string}>(tgt => {
-            let desc = NEXT_TARGET_DESC[tgt];
-            if (tgt=="ONGOING") {
-                desc = (stt=='PENDING'? "Start" :
-                        stt=='SUSPENDED' ? "Resume" : "Re-open") + desc;
-              }
+            let desc = targetTransitionDesc(stt, tgt);
+            desc += " this Target" + (tgt != "ONGOING" ? " ..." : "");
             return {name: tgt, desc: desc}
         })
     }
