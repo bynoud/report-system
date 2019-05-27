@@ -20,6 +20,7 @@ import { PageMainComponent } from './core/main-pages/page-main.component';
 import { PageNotfoundComponent } from './core/main-pages/page-notfound.component';
 import { NavbarComponent } from './core/navbar/navbar.component';
 import { SidebarComponent } from './core/sidebar/sidebar.component';
+import { AngularFireMessagingModule } from '@angular/fire/messaging';
 
 @NgModule({
   declarations: [
@@ -34,10 +35,11 @@ import { SidebarComponent } from './core/sidebar/sidebar.component';
     FormsModule,
     ReactiveFormsModule,
     BrowserAnimationsModule,
-    AngularFireModule.initializeApp(environment.firebase),
     AngularFirestoreModule,
     AngularFireAuthModule,
     AngularFireFunctionsModule,
+    AngularFireMessagingModule,
+    AngularFireModule.initializeApp(environment.firebase),
     ReportModule,
     UserModule,
     AppRoutingModule,

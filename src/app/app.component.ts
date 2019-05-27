@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { slideInAnimation } from './animations';
+import { FCMService } from './core/services/fcm.service';
 
 @Component({
   selector: 'app-root',
@@ -9,7 +10,20 @@ import { slideInAnimation } from './animations';
 })
 export class AppComponent {
 
-  constructor() { }
+  constructor(
+    private fcmService: FCMService
+  ) { }
+
+  ngOnInit() {
+    const userId = 'user001';
+    this.fcmService.requestPermission(userId)
+    this.fcmService.receiveMessage()
+    this.fcmService.currentMessage.subscribe(msg => {
+      console.log("FCM", msg);
+      
+    })
+
+  }
 
 
   delay(ms: number) {
