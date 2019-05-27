@@ -23,7 +23,7 @@ export class SidebarComponent {
         private router: Router,
         private authService: AuthService,
         private msgservice: FlashMessageService,
-        private cfgService: ConfigService
+        public cfgService: ConfigService
     ) { }
 
     ngOnInit() {
