@@ -11,6 +11,8 @@ import { FlashMessageService } from 'src/app/core/flash-message/flash-message.se
 import { auth, firestore } from 'firebase';
 import { serverTime } from 'src/app/models/reports';
 import { AngularFireFunctions } from '@angular/fire/functions';
+import { FCFService } from './fcf.service';
+import { FCMService } from './fcm.service';
 
 // this is also act as AuthGaurd
 
@@ -31,13 +33,13 @@ export class AuthService implements CanActivate {
   constructor(
     private afAuth: AngularFireAuth,
     private afs: AngularFirestore,
-    private fns: AngularFireFunctions,
+    private fcf: FCFService,
     private router: Router,
-    private msgService: FlashMessageService
+    private msgService: FlashMessageService,
+    private fcmService: FCMService
   ) {
 
     this.fs = this.afs.firestore;;
-    // this.fns.functions.useFunctionsEmulator('http://localhost:5001');
     this.subAuthState();
     this.afAuth.auth.setPersistence(auth.Auth.Persistence.LOCAL);
   }
@@ -65,11 +67,13 @@ export class AuthService implements CanActivate {
     this._authSub.unsubscribe();
   }
 
-  private userChange(user: User, fbUser: firebase.User) {
+  private async userChange(user: User, fbUser: firebase.User) {
     this._activeUser$.next(user)
+    this._activeFBUser$.next(fbUser);
     this._authUserChanged$.next(user ? true : false);
-    this._activeFBUser$.next(fbUser)
   }
+  
+
 
   onUserChanged$() {
     return this._activeUser$;
@@ -121,16 +125,14 @@ export class AuthService implements CanActivate {
     )
   }
 
-  private createUser(userCred: auth.UserCredential, opts: {[s:string]: string} = {}): Promise<void> {
-    if (!userCred.additionalUserInfo.isNewUser) return;
-    console.log("create a new user");
-    
-    return this.fns.functions.httpsCallable('createUser')({
-      managerID: "",
-      ...opts
-    })
-      .then(res => console.log('created functions', res))
-      .catch(err => this.error(err))
+  private async createUser(userCred: auth.UserCredential, opts: {[s:string]: string} = {}) {
+    if (userCred.additionalUserInfo.isNewUser) {
+      console.log("create a new user");
+      const res = await this.fcf.createUser({managerID: "", ...opts})
+        .catch(err => this.error(err))
+    }
+
+    return this.fcmService.addFcmToken(userCred.user.uid);
   }
   
   private createUserLocal(user: firebase.User, opts: {[s:string]: string} = {}): Promise<void> {
@@ -170,6 +172,18 @@ export class AuthService implements CanActivate {
 
   getActiveUser$() {
     return this._activeUser$.pipe(first()).toPromise()
+  }
+
+  async getUsersSame(field: string) {
+    const user = await this.getActiveUser$();
+    console.log('user', user, field, user[field]);
+    
+    if (user && user[field] != undefined) {
+      const snaps = await this.fs.collection(`users`).where(field, '==', user[field]).get();
+      return snaps.docs.map(doc => <User>doc.data()).filter(u => u.uid != user.uid);
+    } else {
+      return [];
+    }
   }
 
 
@@ -213,11 +227,11 @@ export class AuthService implements CanActivate {
     // .catch(err => {throw this.raise(err)})
   }
 
-  signOut() {
+  async signOut() {
+    const uid = await this.getActiveUser$().then(user => user.uid);
+    await this.fcmService.removeFcmToken(uid);
     return this.afAuth.auth.signOut()
-      .then(() => {
-        return this.waitLoginChanged$().toPromise();
-      })
+      .then(() => this.waitLoginChanged$().toPromise())
       .catch(err => this.error(err))
     // return this.router.navigate(['/']);
   }

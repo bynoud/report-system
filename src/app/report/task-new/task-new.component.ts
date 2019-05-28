@@ -56,6 +56,7 @@ export class TaskNewComponent implements OnInit {
   get descInvalid() {
     return this.desc.invalid && (this.desc.dirty || this.desc.touched)
   }
+  get targets() { return this.taskForm.get('targets') as FormArray }
   getTargetsDesc(i: number) {
     var tgts = this.taskForm.get('targets') as FormArray;
     return tgts.at(i).get('desc')

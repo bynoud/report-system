@@ -44,7 +44,7 @@
                     data-toggle="toottip" data-placement="left" title="Click to add new Target"></a>
             </div>
             <div class="form-group" formArrayName="targets" id="targets">
-                <div *ngFor="let target of taskForm.get('targets'); let i = index"
+                <div *ngFor="let target of targets.controls; let i = index"
                     [formGroupName]="i">
 
                     <div class="input-group">

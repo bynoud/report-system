@@ -8,6 +8,7 @@ import { map, catchError } from 'rxjs/operators';
 import { Observable, Subscription } from 'rxjs';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 import { User } from '../models/user';
+import { FCFService } from '../core/services/fcf.service';
 
 const SUMMARY_SINCE_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -25,7 +26,8 @@ export class ReportService implements OnDestroy {
     constructor(
         private authService: AuthService,
         private afs: AngularFirestore,
-        private msgService: FlashMessageService
+        private msgService: FlashMessageService,
+        private fcf: FCFService,
     ){
         this.fs = afs.firestore
         
@@ -382,6 +384,8 @@ export class ReportService implements OnDestroy {
         // assume a comment is added mean task still open
         batch.update(this.fs.doc(taskdoc), {updatedAt: serverTime(),
             status: (type=="CloseTask")? "CLOSED" : "OPEN"})
+        // add a field right under 'reports/{userID}/pdatedAt'
+        batch.update(this.fs.doc(`reports/${task.userID}`), {updatedAt: serverTime()})
         if (doCommit) return batch.commit().catch(err => this.error(err))
         else return null
     }
@@ -542,6 +546,11 @@ export class ReportService implements OnDestroy {
         console.log("reportsrv unsub all");
         this.subcriptions.forEach(sub => { if (!sub.closed) sub.unsubscribe() });
         this.subcriptions = [];
+    }
+
+    async sendReminder(all: boolean = true) {
+        const uids = await this.authService.getUsers$().then(users => users.map(u => u.uid))
+        return this.fcf.remindLateMembers(uids)
     }
 
 

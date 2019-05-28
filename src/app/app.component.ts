@@ -12,16 +12,21 @@ export class AppComponent {
 
   constructor(
     private fcmService: FCMService
-  ) { }
-
-  ngOnInit() {
-    const userId = 'user001';
-    this.fcmService.requestPermission(userId)
-    this.fcmService.receiveMessage()
-    this.fcmService.currentMessage.subscribe(msg => {
+  ) {
+    this.fcmService.onMessageRecieved().subscribe(msg => {
       console.log("FCM", msg);
       
     })
+
+   }
+
+  ngOnInit() {
+    // const userId = 'user001';
+    // this.fcmService.requestPermission(userId)
+    // this.fcmService.onMessageRecieved().subscribe(msg => {
+    //   console.log("FCM", msg);
+      
+    // })
 
   }
 

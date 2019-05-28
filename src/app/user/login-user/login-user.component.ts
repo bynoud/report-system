@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewContainerRef, ComponentFactoryResolver, EventEmitter } from '@angular/core';
 import { AuthService } from 'src/app/core/services/auth.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { Subscription, Subject, BehaviorSubject, ReplaySubject } from 'rxjs';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
@@ -14,10 +14,14 @@ export class LoginUserComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private authService: AuthService,
     private msgService: FlashMessageService
   ) {
    }
+
+  loginGoogle = false;
+  loginEmail = false;
 
   loginForm: FormGroup;
   subs: Subscription[] = [];
@@ -32,6 +36,12 @@ export class LoginUserComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loading$.next(true);
+
+    this.subs.push(this.route.paramMap.subscribe( params => {
+      this.loginGoogle = params.get('google') ? true : false;
+      this.loginEmail = params.get('email') ? true : false;
+    }));
+
     this.subs.push(this.authService.onLoginChanged$().subscribe(user => {
       console.log("user to redirect", user);
       if (user) this.router.navigate(['/'])

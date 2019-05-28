@@ -42,16 +42,13 @@ export class FlashMessageService {
             debounceTime(200)   // if navigation is too fast, probaly this is program de-tour
         ).subscribe(ev => {
             // the message is cleared at navigation start
-            console.error("srv nav", ev);
             // this.msgs = {info:"", warn:"", error:""}
             for (var k in this.bsAlertClass) {
                 if (this.savedMsg[k]) {
-                    console.log("this persist", k);
                     // if it persist, re-emit that message
                     this.sendMessage(this.savedMsg[k], k);
                     delete this.savedMsg[k];
                 } else {
-                    console.log("this remove", k);
                     this.messages$.next({msg: "", type: k, class: ""})
                 }
             }
@@ -62,7 +59,7 @@ export class FlashMessageService {
         if (type in this.bsAlertClass) {
             return "alert alert-" + this.bsAlertClass[type]
         } else {
-            console.error(`Flash message type '${type}' is nout found`);
+            console.error(`Flash message type '${type}' is not found`);
             return "alert alert-danger"
         }
     }
@@ -72,12 +69,10 @@ export class FlashMessageService {
             // cancel previous sub, if new flash message is emitted
             switchMap(flash => {
                 this.msgFlash$.next(flash);
-                console.log("flash set", flash);
                 return new Promise( resolve => setTimeout(resolve, flash.duration) );
             })
         ).subscribe(() => {
             this.msgFlash$.next({msg: "", class: "", duration: 0})
-            console.log("flash clear");
          } )
     }
 
@@ -95,7 +90,6 @@ export class FlashMessageService {
     }
 
     sendMessage(msg: string, type: string, persist: boolean = false) {
-        console.warn("srv send", msg, type);
         if (persist) this.savedMsg[type] = msg;
         this.messages$.next({msg, type, class: this.getClass(type)})
     }

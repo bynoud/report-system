@@ -22,4 +22,9 @@ export class ReportComponent implements OnInit {
     // })
   }
 
+  testing() {
+    // this.authService.getUsersSame('managerID')
+    //   .then(console.log)
+    this.reportService.sendReminder()
+  }
 }

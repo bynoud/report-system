@@ -27,7 +27,6 @@ export class FlashMessageComponent implements OnInit, OnDestroy {
       this.flashMsg = msg.msg ? {msg: msg.msg, class: msg.class} : null;
     }))
     this.subs.push(this.srv.onMessageChanged$().subscribe(msg => {
-      console.warn("msg comp receive", msg);
       
       if (this.msgTypes.indexOf(msg.type) < 0) {
         this.msgTypes.push(msg.type)

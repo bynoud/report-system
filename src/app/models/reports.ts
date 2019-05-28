@@ -78,9 +78,6 @@ export function dateToSince(time: firestore.Timestamp | number | string) {
     }
     let days = (now.valueOf() - then.valueOf()) / DAY_MS;
 
-    console.log('datesince', now, then, now.valueOf(), then.valueOf(), days);
-    
-
     if (now.getFullYear() > then.getFullYear()) return "Years ago"
     else if (now.getMonth() > then.getMonth()) return `${now.getMonth() - then.getMonth()} months ago`
     else if (days > 7) return `${Math.floor(days/7)} weeks ago`

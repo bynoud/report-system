@@ -31,7 +31,7 @@ export class ReportCommentComponent implements OnInit {
     } else {
       this.byDiffUser = this.task.userID != this.comm.by.uid;
     }
-    console.log(this.byDiffUser);
+    // console.log(this.byDiffUser);
     
     this.systemComm = true;
 
@@ -64,7 +64,7 @@ export class ReportCommentComponent implements OnInit {
 
     this.text = txt;
     this.dateText = dateToSince(this.comm.at)
-    console.warn(this.comm, this.dateText);
+    // console.warn(this.comm, this.dateText);
     
   }
 
@@ -77,7 +77,7 @@ export class ReportCommentComponent implements OnInit {
   }
 
   dateSince(time) {
-    console.log("call datesince", this.task);
+    // console.log("call datesince", this.task);
     
     return dateToSince(time)
   }
