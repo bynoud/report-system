@@ -1,0 +1,11 @@
+.user-right-arrow {
+    font-size: x-large;
+    // margin-left: auto;
+    transform: scale(0.5,1);
+  }
+  
+  // dont show pointer on active item
+  .list-group-item.active {
+    cursor: auto;
+  }
+  

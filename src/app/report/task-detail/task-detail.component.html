@@ -1,15 +1,16 @@
 
 <div class="card card-shadow">
-  <div class="card-header" data-toggle="collapse" attr.data-target="#report-comments-{{task.uid}}">
+  <div class="card-header collapsed" data-toggle="collapse" attr.data-target="#report-comments-{{task.uid}}">
     <div class='d-flex align-items-start'
-      data-toggle="tooltip" data-placement="right" [title]="taskStatus.desc">
+      data-toggle="tooltip" data-placement="right" title="Click to expand detail Comments.">
         <i [className]="'status-icon ' + taskStatus.icon"
-          [style.color]="taskStatus.iconColor"></i>
+          [style.color]="taskStatus.iconColor"
+          data-toggle="tooltip" data-placement="right" [title]="taskStatus.desc"></i>
         <span class="text-primary font-weight-bold mr-2 text-nowrap">{{task.project}}</span>
         <span class="text-secondary mr-3 truncate-on-close text-truncate font-weight-bold">
           {{task.title}}
         </span>
-        <i class="fas fa-angle-down more-less"></i>
+        <i class="fas fa-angle-up more-less"></i>
     </div>
   </div>
 

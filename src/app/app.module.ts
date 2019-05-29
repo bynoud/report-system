@@ -21,6 +21,7 @@ import { PageNotfoundComponent } from './core/main-pages/page-notfound.component
 import { NavbarComponent } from './core/navbar/navbar.component';
 import { SidebarComponent } from './core/sidebar/sidebar.component';
 import { AngularFireMessagingModule } from '@angular/fire/messaging';
+import { TeamViewComponent } from './core/sidebar/team-view.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +29,8 @@ import { AngularFireMessagingModule } from '@angular/fire/messaging';
     PageMainComponent,
     PageNotfoundComponent,
     NavbarComponent,
-    SidebarComponent
+    SidebarComponent,
+    TeamViewComponent
   ],
   imports: [
     BrowserModule,

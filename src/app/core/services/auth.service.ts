@@ -6,7 +6,7 @@ import { AngularFirestore } from '@angular/fire/firestore';
 
 import { Observable, of, Subject, BehaviorSubject, ReplaySubject, Subscription } from 'rxjs';
 import { switchMap, first, map, mergeMap, catchError, takeLast, concat, take } from 'rxjs/operators';
-import { User } from 'src/app/models/user';
+import { User, Team } from 'src/app/models/user';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 import { auth, firestore } from 'firebase';
 import { serverTime } from 'src/app/models/reports';
@@ -149,14 +149,35 @@ export class AuthService implements CanActivate {
   }
 
 
-  getUsers$(): Promise<User[]> {
-    return this.fs.collection('users').get()
-      .then(snaps => {
-        return snaps.docs.map(userSS => <User>userSS.data() )
-      })
-      .catch(err => this.error(err))
+  getUserWith(field: string, op: firestore.WhereFilterOp, value: any) {
+    console.log("getuserswith", field, op, value);
+    
+    return this.fs.collection('users').where(field, op, value).get()
+      .then(snaps => snaps.docs.map(doc => <User>doc.data()))
   }
 
+  // async getPeerMembers() {
+  //   const user = await this.getActiveUser$();
+  //   return this.queryUserWith([['managerID', '==', user.managerID]])
+  // }
+
+
+  // async getMyTeam() {
+  //   const user = await this.getActiveUser$();
+  //   let myTeam: Team;
+  //   if (user.managerID) {
+  //     const manager = await this.getUser$(user.managerID);
+  //     myTeam = new Team(manager)
+  //   } else {
+  //     myTeam = new Team(null)
+  //   }
+
+  //   myTeam.addMembers(await this.getUserWith('managerID', '==', user.managerID))
+  //   myTeam.addSubteam(new Team(user, await this.getUserWith('managerID', '==', user.uid)))
+  //   return myTeam;
+  // }
+
+  
   getUser$(uid: string, deb: string = ""): Promise<User> {
     if (this._users$[uid]) {
       return Promise.resolve(this._users$[uid]);
@@ -169,6 +190,7 @@ export class AuthService implements CanActivate {
         .catch(err => this.error(err))
     }
   }
+
 
   getActiveUser$() {
     return this._activeUser$.pipe(first()).toPromise()
@@ -235,5 +257,5 @@ export class AuthService implements CanActivate {
       .catch(err => this.error(err))
     // return this.router.navigate(['/']);
   }
-
 }
+

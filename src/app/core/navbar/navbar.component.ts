@@ -42,7 +42,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   toggleSidebar() {
     this.cfgService.toogleSidebar = !this.cfgService.toogleSidebar;
-    this.navigating = !this.navigating;
   }
 
   // monitor navigation, and show loading bar

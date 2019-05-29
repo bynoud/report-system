@@ -3,9 +3,6 @@
   margin-left: -15rem;
   transition: margin .25s ease-out;
   box-shadow: 0 0.2rem 0.4rem 0 rgba(0,0,0,0.2);
-}
-  
-.sidebar-wrapper .list-group {
   width: 15rem;
 }
   
@@ -29,13 +26,13 @@
   
 
 
-.user-right-arrow {
-  font-size: x-large;
-  margin-left: auto;
-  transform: scale(0.5,1);
-}
+// .user-right-arrow {
+//   font-size: x-large;
+//   margin-left: auto;
+//   transform: scale(0.5,1);
+// }
 
-// dont show pointer on active item
-.list-group-item.active {
-  cursor: auto;
-}
+// // dont show pointer on active item
+// .list-group-item.active {
+//   cursor: auto;
+// }

@@ -1,10 +1,10 @@
 
-<div class="bg-light border-right border-top sidebar-wrapper"
+<div *ngIf="user" class="bg-light border-right border-top sidebar-wrapper"
     [ngClass]="{'toggled': cfgService.toogleSidebar}">
     <!-- <div class="sidebar-heading">Start Bootstrap </div> -->
     
 
-    <div *ngIf="user">
+    <div>
 
         <div class="d-flex flex-column align-items-center py-3">
             
@@ -37,15 +37,29 @@
                 </form>
         </div>
 
-        <div class="list-group list-group-flush" [appLoadingBy]="loadingUsers$">
-            <a *ngFor="let u of otherUsers" 
-                class="list-group-item list-group-item-action list-group-item-light d-flex align-items-center"
-                [routerLink]="['/report', u.uid]"
-                routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-                <span class="user-avatar mr-2" [style.background-image]="'url(' + u.photoURL + ')'"></span>
-                {{u.displayName}}
-                <i class="fas fa-chevron-right ml-auto user-right-arrow"></i>
-            </a>
+        <div class="list-group list-group-flush">
+            <app-team-view [user]="user" [deep]="0"></app-team-view>
         </div>
+        <!-- <div *ngIf="myTeam!=undefined" class="list-group list-group-flush" [appLoadingBy]="loadingUsers$">
+
+            <a class="list-group-item list-group-item-action list-group-item-light d-flex align-items-center">
+                <ng-template [ngIf]="myTeam.leader" [ngIfElse]="noManager">
+                    <span class="user-avatar mr-2" [style.background-image]="'url(' + myTeam.leader.photoURL + ')'"></span>
+                    {{myTeam.leader.displayName}} (Manager)
+                    <i class="fas fa-chevron-right ml-auto user-right-arrow"></i>
+                </ng-template>
+                <ng-template #noManager>
+                    <span >NO Manager</span>
+                </ng-template>
+            </a>
+
+            <div class='ml-4'>
+                <a *ngFor="let mem of myTeam.members" class="list-group-item list-group-item-action list-group-item-light d-flex align-items-center">
+                    <span class="user-avatar mr-2" [style.background-image]="'url(' + mem.photoURL + ')'"></span>
+                    {{mem.displayName}}
+                    <i class="fas fa-chevron-right ml-auto user-right-arrow"></i>
+                </a>
+            </div>
+        </div> -->
     </div>
 </div>

@@ -1,5 +1,5 @@
 import { Component, Input } from "@angular/core";
-import { User } from 'src/app/models/user';
+import { User, Team } from 'src/app/models/user';
 import { Subscription, BehaviorSubject } from 'rxjs';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -15,7 +15,8 @@ import { ConfigService } from '../services/config.service';
 export class SidebarComponent {
 
     user: User;
-    otherUsers: User[] = [];
+    // otherUsers: User[] = [];
+    // myTeam: Team;
     subs = new Subscription();
     loadingUsers$ = new BehaviorSubject<boolean>(false);
 
@@ -29,22 +30,28 @@ export class SidebarComponent {
     ngOnInit() {
         this.subs.add(this.authService.onUserChanged$().subscribe(user => {
             this.user = user;
-            if (user) {
-                this.loadingUsers$.next(true);
-                this.authService.getUsers$().then( users => {
-                    this.otherUsers = users.filter(user => user.uid != this.user.uid);
-                    this.loadingUsers$.next(false);
-                });
-            } else {
-                this.otherUsers = [];
-            }
+            // if (user) {
+            //     this.loadingUsers$.next(true);
+            //     // this.authService.getUsers$().then( users => {
+            //     //     this.otherUsers = users.filter(user => user.uid != this.user.uid);
+            //     //     this.loadingUsers$.next(false);
+            //     // });
+            //     this.authService.getMyTeam().then(team => {
+            //         console.log("team", team);
+                    
+            //         this.myTeam = team;
+            //         this.loadingUsers$.next(false);
+            //     })
+            // } else {
+            //     this.otherUsers = [];
+            // }
         }));
 
     }
 
     ngOnDestroy() {
         console.log("destroy");
-        this.subs.unsubscribe()
+        // this.subs.unsubscribe()
     }
 
     onLogout() {

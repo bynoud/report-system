@@ -1,0 +1,23 @@
+
+<div *ngIf="team" [style.marginLeft.rem]="deep">
+
+    <a class="list-group-item list-group-item-action list-group-item-light d-flex align-items-center"
+        [routerLink]="['/report', team.leader.uid]" routerLinkActive="active" >
+        <ng-template [ngIf]="team.leader" [ngIfElse]="noManager">
+            <span class="user-avatar mr-2" [style.background-image]="'url(' + team.leader.photoURL + ')'"></span>
+            {{team.leader.displayName}}
+            <span *ngIf="team.leader.uid==activeUser.uid" class="ml-1">(*)</span>
+            <span class="ml-auto align-items-center d-flex">
+                <span *ngIf="team.size>0" class="badge badge-pill badge-primary">{{team.size}}</span>
+                <i class="fas fa-chevron-right user-right-arrow ml-1"></i>
+            </span> 
+        </ng-template>
+        <ng-template #noManager>
+            <span >NO Manager</span>
+        </ng-template>
+    </a>
+
+    <div *ngIf="team.size>0" class="list-group list-group-flush" [style.marginLeft.rem]="deep">
+        <app-team-view *ngFor="let mem of team.members" [deep]="deep+1" [user]="mem.leader"></app-team-view>
+    </div>
+</div>

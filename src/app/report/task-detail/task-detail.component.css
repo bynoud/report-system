@@ -10,6 +10,10 @@
     font-size: 1.5rem;
     transition: all 0.2s ease-out; /* rotate transition */
 }
+/* rotate down when collapsed */
+.card-header.collapsed .more-less {
+    transform: rotate(180deg);
+}
 
 /* for button group, more round corner */
 .btn-round-left {

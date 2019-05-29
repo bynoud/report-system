@@ -549,7 +549,7 @@ export class ReportService implements OnDestroy {
     }
 
     async sendReminder(all: boolean = true) {
-        const uids = await this.authService.getUsers$().then(users => users.map(u => u.uid))
+        const uids = await this.authService.getUserWith('managerID', '==', this.userID).then(users => users.map(u => u.uid))
         return this.fcf.remindLateMembers(uids)
     }
 
