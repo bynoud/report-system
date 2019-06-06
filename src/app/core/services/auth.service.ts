@@ -23,7 +23,7 @@ export class AuthService implements CanActivate {
 
   private _authSub: Subscription;
   private _activeUser$ = new ReplaySubject<User>(1);  // only replay the last value
-  private _activeFBUser$ = new ReplaySubject<firebase.User>(1);
+  // private _activeFBUser$ = new ReplaySubject<firebase.User>(1);
   private _authUserChanged$ = new Subject<boolean>();
 
   private _users$: {[s: string]: User} = {};
@@ -68,8 +68,10 @@ export class AuthService implements CanActivate {
   }
 
   private async userChange(user: User, fbUser: firebase.User) {
+    console.warn("user changed", user);
+    
     this._activeUser$.next(user)
-    this._activeFBUser$.next(fbUser);
+    // this._activeFBUser$.next(fbUser);
     this._authUserChanged$.next(user ? true : false);
   }
   
@@ -84,7 +86,7 @@ export class AuthService implements CanActivate {
   }
 
   waitLoginChanged$() {
-    return this._authUserChanged$.pipe(take(1));
+    return this._authUserChanged$.pipe(take(1)).toPromise();
   }
 
   get activeUser$() {
@@ -105,9 +107,11 @@ export class AuthService implements CanActivate {
   }
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-    return this._activeFBUser$.pipe(
+    return this._activeUser$.pipe(
       take(1),
       map(user => {
+        console.warn("can active", user);
+        
         if (user == null) {
           this.router.navigate(['/'])
           this.msgService.error("Login is required", true)
@@ -132,7 +136,8 @@ export class AuthService implements CanActivate {
         .catch(err => this.error(err))
     }
 
-    return this.fcmService.addFcmToken(userCred.user.uid);
+    this.fcmService.addFcmToken(userCred.user.uid)
+    return userCred;
   }
   
   private createUserLocal(user: firebase.User, opts: {[s:string]: string} = {}): Promise<void> {
@@ -176,19 +181,41 @@ export class AuthService implements CanActivate {
   //   myTeam.addSubteam(new Team(user, await this.getUserWith('managerID', '==', user.uid)))
   //   return myTeam;
   // }
+  async getMyTeam(user: User, upTeamAtBottom: boolean) {
+    // get members
+    let team = new Team(user);
+    team.addMembers(await this.getUserWith('managerID', '==', user.uid));
+    console.log("getteam", user, team);
+    
+    if (upTeamAtBottom && team.size == 0) {
+        if (user.managerID) {
+            team.upLevel(await this.getUser$(user.managerID))
+        } else {
+            team.upLevel(null)
+        }
+        team.addMembers(await
+            this.getUserWith('managerID', '==', user.managerID)
+                .then(users => users.filter(u => u.uid != user.uid))
+        );
+    }
+    return team;
+  }
 
   
   getUser$(uid: string, deb: string = ""): Promise<User> {
-    if (this._users$[uid]) {
-      return Promise.resolve(this._users$[uid]);
-    } else {
-      return this.fs.doc(`users/${uid}`).get()
-        .then(snaps => {
-          this._users$[uid] = <User>snaps.data();
-          return this._users$[uid];
-        })
-        .catch(err => this.error(err))
-    }
+    return this.fs.doc(`users/${uid}`).get()
+      .then(snap => <User>snap.data())
+      .catch(err => this.error(err))
+    // if (this._users$[uid]) {
+    //   return Promise.resolve(this._users$[uid]);
+    // } else {
+    //   return this.fs.doc(`users/${uid}`).get()
+    //     .then(snaps => {
+    //       this._users$[uid] = <User>snaps.data();
+    //       return this._users$[uid];
+    //     })
+    //     .catch(err => this.error(err))
+    // }
   }
 
 
@@ -196,17 +223,47 @@ export class AuthService implements CanActivate {
     return this._activeUser$.pipe(first()).toPromise()
   }
 
-  async getUsersSame(field: string) {
-    const user = await this.getActiveUser$();
-    console.log('user', user, field, user[field]);
-    
-    if (user && user[field] != undefined) {
-      const snaps = await this.fs.collection(`users`).where(field, '==', user[field]).get();
-      return snaps.docs.map(doc => <User>doc.data()).filter(u => u.uid != user.uid);
-    } else {
-      return [];
+  updateUser(update: {[s:string]: any}) {
+    const pros: Promise<any>[] = [];
+    const items: string[] = [];
+    for (const k in update) {
+      if (!update[k]) continue;
+      switch(k) {
+        case 'companyEmail':
+          pros.push(this.fcf.setCompanyEmail(update[k]));
+          items.push(k);
+          break;
+        case 'managerID':
+          pros.push(this.fcf.setManager(update[k]));
+          items.push(k);
+          break;
+        case 'role':
+          if (update.userID && update.level!=null) {
+            pros.push(this.fcf.setRole(update.userID, update.role, update.level));
+            items.push(k);
+          }
+          break;
+      }
     }
+    return Promise.all(pros).then(() => items)
+      // -> just dont cache user data. Not so expensive to fetch it again
+      // .then(() => {
+      //   // remove cached user data on success
+      // })
+      .catch(err => this.error(err))
   }
+
+  // async getUsersSame(field: string) {
+  //   const user = await this.getActiveUser$();
+  //   console.log('user', user, field, user[field]);
+    
+  //   if (user && user[field] != undefined) {
+  //     const snaps = await this.fs.collection(`users`).where(field, '==', user[field]).get();
+  //     return snaps.docs.map(doc => <User>doc.data()).filter(u => u.uid != user.uid);
+  //   } else {
+  //     return [];
+  //   }
+  // }
 
 
   emailSignUp(displayName: string, email: string, photoURL: string, managerID: string, password: string): Promise<void> {
@@ -237,23 +294,25 @@ export class AuthService implements CanActivate {
   private oAuthLogin(provider: auth.AuthProvider) {
     this.unsubAuthState();
     console.log("start");
+    let userCred: auth.UserCredential;
     
     return this.afAuth.auth.signInWithPopup(provider).then(cred => {
       console.log("finish popup");
-      
+      userCred = cred;
       return this.createUser(cred);
     })
-    .then(() => {
-      this.subAuthState()
-    })
+    .then(() => this.subAuthState())
+    .then(() => this.waitLoginChanged$())
+    .then(() => userCred)
     // .catch(err => {throw this.raise(err)})
   }
 
   async signOut() {
-    const uid = await this.getActiveUser$().then(user => user.uid);
+    const uid = await this.getActiveUser$().then(user => user ? user.uid : "");
+    if (!uid) return;
     await this.fcmService.removeFcmToken(uid);
     return this.afAuth.auth.signOut()
-      .then(() => this.waitLoginChanged$().toPromise())
+      .then(() => this.waitLoginChanged$())
       .catch(err => this.error(err))
     // return this.router.navigate(['/']);
   }

@@ -4,6 +4,7 @@ import { ReportService } from '../report.service';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
+import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 
 const TARGETS_PH = [
   "Defeat Superman",
@@ -28,7 +29,7 @@ export class TaskNewComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private reportService: ReportService,
-    private authService: AuthService
+    private msgService: FlashMessageService
   ) { }
   
   taskForm: FormGroup;
@@ -109,6 +110,11 @@ export class TaskNewComponent implements OnInit {
     this.reportService.addTask(this.userID, value)
       .then(_ => this.router.navigate([this.returnURL]))
       .catch(err => this.loading$.next(false))
+  }
+
+  onCancel() {
+    this.msgService.warn("New Task is canceled", true);
+    this.router.navigate([this.returnURL]);
   }
 
 

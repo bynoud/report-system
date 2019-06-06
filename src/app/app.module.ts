@@ -18,19 +18,15 @@ import { UserModule } from './user/user.module';
 import { SharedModule } from './core/shared.module';
 import { PageMainComponent } from './core/main-pages/page-main.component';
 import { PageNotfoundComponent } from './core/main-pages/page-notfound.component';
-import { NavbarComponent } from './core/navbar/navbar.component';
-import { SidebarComponent } from './core/sidebar/sidebar.component';
 import { AngularFireMessagingModule } from '@angular/fire/messaging';
-import { TeamViewComponent } from './core/sidebar/team-view.component';
+import { PageSignoutComponent } from './core/main-pages/page-signout.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     PageMainComponent,
     PageNotfoundComponent,
-    NavbarComponent,
-    SidebarComponent,
-    TeamViewComponent
+    PageSignoutComponent,
   ],
   imports: [
     BrowserModule,

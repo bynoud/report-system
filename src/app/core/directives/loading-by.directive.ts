@@ -93,8 +93,6 @@ export class LoadingByDirective implements OnInit {
 
 
   ngOnDestroy() {
-    console.error("loading directive destroy");
-    
     this.subs.unsubscribe();
   }
 

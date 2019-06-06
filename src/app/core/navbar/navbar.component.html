@@ -6,7 +6,7 @@
       <a class="navbar-brand" [routerLink]="['/report']">REPORTER</a>
 
       <div class="navbar-nav">
-        <a class="nav-item nav-link" [routerLink]="['/report/sum']"
+        <a *ngIf="user" class="nav-item nav-link" [routerLink]="['/report/sum']"
           routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Summary</a>
       </div>
 

@@ -1,11 +1,12 @@
 import * as functions from 'firebase-functions';
 
 import './app-init';
-import './user';
 import { remindLateMembers } from './fcm';
-import { updateUser, createUser } from './user';
+import { setCompanyEmail, setManager, setRole, createUser } from './user';
 
 exports.createUser = functions.https.onCall(createUser);
-exports.updateUser = functions.https.onCall(updateUser);
+exports.setRole = functions.https.onCall(setRole);
+exports.setManager = functions.https.onCall(setManager);
+exports.setCompanyEmail = functions.https.onCall(setCompanyEmail);
 
 exports.remindLateMembers = functions.https.onCall(remindLateMembers);

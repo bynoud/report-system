@@ -26,29 +26,31 @@ export class LoginUserComponent implements OnInit, OnDestroy {
   loginForm: FormGroup;
   subs: Subscription[] = [];
 
-  loading$ = new ReplaySubject<boolean>(1);
+  loading$ = new BehaviorSubject<boolean>(false);
 
-  loading = false;
-  toggleLoading() {
-    this.loading = !this.loading;
-    this.loading$.next(this.loading);
-  }
+  // loading = false;
+  // toggleLoading() {
+  //   this.loading = !this.loading;
+  //   this.loading$.next(this.loading);
+  // }
 
   ngOnInit() {
-    this.loading$.next(true);
 
     this.subs.push(this.route.paramMap.subscribe( params => {
       this.loginGoogle = params.get('google') ? true : false;
       this.loginEmail = params.get('email') ? true : false;
     }));
 
-    this.subs.push(this.authService.onLoginChanged$().subscribe(user => {
-      console.log("user to redirect", user);
-      if (user) this.router.navigate(['/'])
-      else {
-        this.loading$.next(false)
-      }
-    }))
+    // this.subs.push(this.authService.$().subscribe(user => {
+    //   console.log("user to redirect", user);
+    //   if (user) {
+    //     if (user.)
+    //     this.router.navigate(['/']);
+    //   }
+    //   else {
+    //     this.loading$.next(false)
+    //   }
+    // }))
     this.createForm();
 
   }
@@ -83,22 +85,54 @@ export class LoginUserComponent implements OnInit, OnDestroy {
         this.loading$.next(false)})
   }
 
-  googleLogin() {
+
+  async oathLogin(provider: string) {
     this.loading$.next(true);
-    this.authService.googleLogin()
+    const cred = await ((provider == 'google') ? this.authService.googleLogin()
+                                        : this.authService.facebookLogin())
       .catch(err => {
-        this.loading$.next(false)
+        this.msgService.error(err.message);
+        return null;
       })
+
+    if (cred!=null) {
+      if (cred.additionalUserInfo.isNewUser) {
+        this.msgService.warn("This is the first time I see you. Take some time to introduce yourself", true);
+        this.router.navigate(['../edit'], {relativeTo: this.route})
+      } else {
+        this.msgService.info("Successfully logged in", true);
+        this.router.navigate(['/report'])
+      }
+    } else {
+      this.loading$.next(false)
+    }
+
   }
 
-  facebookLogin() {
-    this.loading$.next(true);
-    this.authService.facebookLogin()
-      .catch(err => {
-        console.warn("fb", err);
-        this.msgService.error(err.message);
-        this.loading$.next(false)
-      })
-  }
+  // async googleLogin() {
+  //   this.loading$.next(true);
+  //   this.authService.googleLogin()
+  //     .then(cred => {
+  //       if (cred.additionalUserInfo.isNewUser) this.router.navigate(['./edit'])
+  //       else this.router.navigate(['/report'])
+  //     })
+  //     .catch(err => {
+  //       this.msgService.error(err.message);
+  //       this.loading$.next(false)
+  //     })
+  // }
+
+  // facebookLogin() {
+  //   this.loading$.next(true);
+  //   this.authService.facebookLogin()
+  //     .then(cred => {
+  //       if (cred.additionalUserInfo.isNewUser) this.router.navigate(['./edit'])
+  //       else this.router.navigate(['/report'])
+  //     })
+  //     .catch(err => {
+  //       this.msgService.error(err.message);
+  //       this.loading$.next(false)
+  //     })
+  // }
 
 }

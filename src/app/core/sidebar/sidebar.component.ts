@@ -56,11 +56,12 @@ export class SidebarComponent {
 
     onLogout() {
         console.log("to log out");
-        
-        this.authService.signOut().then(() => {
-        this.router.navigate(["/"]);
-        this.msgservice.info("Successful Logged out", true)
-        })
+        // prevent permission denied error, when the logout is fast & navigate is not active then the page is not destroyed yet
+        this.router.navigate(['/signout']);
+        // this.authService.signOut().then(() => {
+        // this.router.navigate(["/"]);
+        // this.msgservice.info("Successful Logged out", true)
+        // })
     }
 
     onNewTask() {

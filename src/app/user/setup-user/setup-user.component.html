@@ -1,0 +1,45 @@
+
+<div class="card" [appLoadingBy]="loading$">
+  <div class="card-header">EDIT</div>
+
+  
+  <div class="card-body" *ngIf="user">
+
+    <div class="align-items-center d-flex flex-column">
+      <!-- <img [src]="'url(' + user.photoURL + ')'" alt="User Avatar" class="avatar-img"> -->
+      <span class="user-avatar active-user mr-2" [style.background-image]="'url(' + user.photoURL + ')'"></span>
+      <span>{{user.displayName}}</span>
+    </div>
+
+    <!-- Email input -->
+    <div class="form-group" *ngIf="state=='inputEmail'">
+      <label for="companyEmail">Company Email</label>
+      <input type="email" class="form-control" id="companyEmail" required
+        [(ngModel)]="model.companyEmail" name="companyEmail" [placeholder]="'someone@' + emailDomain">
+    </div>
+
+    <div class="mb-3" *ngIf="state=='selectManager'">
+      <label for="selectManager">Select your Manager</label>
+      <div [appLoadingBy]="loadingManagers$" class="border-top">
+        <div class="list-group list-group-flush" *ngIf="managers">
+          <h6 *ngIf="managers.length == 0" class="text-system">There's no other Manager. Email your Admin to setup</h6>
+          <a *ngFor="let man of managers" class="list-group-item list-group-item-action list-group-item-light d-flex align-items-center"
+            [ngClass]="{'active': model.managerID == man.uid}"
+            (click)="selectManager(man.uid)">
+            <span class="user-avatar mr-2" [style.background-image]="'url(' + man.photoURL + ')'"></span>
+            {{man.displayName}}
+            <!-- <i class="fas fa-chevron-right ml-auto user-right-arrow"></i> -->
+          </a>
+        </div>
+      </div>
+     
+    </div>
+
+    <div class="d-flex">
+      <button type="button" (click)="stateBack()" *ngIf="!stateFirst" class="btn btn-outline-secondary mr-auto">Back</button>
+      <button type="button" (click)="stateNext()" *ngIf="!stateLast" class="btn btn-info ml-auto">Next</button>
+      <button type="button" (click)="submitForm()" *ngIf="stateLast" class="btn btn-success ml-auto">Done</button>
+    </div>
+
+  </div>
+</div>

@@ -7,8 +7,8 @@ import { fbmsg, fbstore } from './app-init';
 // const SUMMARY_SINCE_MS = 7 * 24 * 60 * 60 * 1000;
 
 async function notifyDevices(uids: string[], title: string, body: string, key: string) {
-    let tokens: string[] = [];
-    for (let uid of uids) {
+    const tokens: string[] = [];
+    for (const uid of uids) {
         tokens.push(... await fbstore.doc(`secrets/${uid}/services/fcm`).get().then(snaps => {
             const data = snaps.data();
             if (data && data['tokens']) return <string[]>data['tokens'];
@@ -32,7 +32,6 @@ async function notifyDevices(uids: string[], title: string, body: string, key: s
         // },
         // TODO : add android & iOS
     }
-    console.log("nofifyDevice", uids, tokens, msg);
     if (tokens.length == 0) throw new functions.https.HttpsError('not-found', 'No FCM tokens found');
     else return fbmsg.sendToDevice(tokens, msg, {collapseKey: key})
 }

@@ -3,6 +3,10 @@ import { CommonModule } from '@angular/common';
 import { LoadingByDirective, LoadingByContentComponent } from './directives/loading-by.directive';
 import { LoadingComponent } from './loading/loading.component';
 import { FlashMessageComponent } from './flash-message/flash-message.component';
+import { SidebarComponent } from './sidebar/sidebar.component';
+import { TeamViewComponent } from './sidebar/team-view.component';
+import { NavbarComponent } from './navbar/navbar.component';
+import { RouterModule } from '@angular/router';
 
 
 @NgModule({
@@ -10,18 +14,24 @@ import { FlashMessageComponent } from './flash-message/flash-message.component';
         LoadingByDirective,
         LoadingComponent,
         LoadingByContentComponent,
-        FlashMessageComponent
+        FlashMessageComponent,
+        NavbarComponent,
+        SidebarComponent,
+        TeamViewComponent
     ],
     imports: [
-        CommonModule
+        CommonModule,
+        RouterModule,
     ],
     exports: [
         LoadingByDirective,
         LoadingComponent,
-        FlashMessageComponent
+        FlashMessageComponent,
+        NavbarComponent,
+        SidebarComponent,
     ],
     entryComponents: [
-        LoadingByContentComponent
+        LoadingByContentComponent,
     ]
 })
 export class SharedModule{}

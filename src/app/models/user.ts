@@ -14,12 +14,13 @@
 export interface User {
   createdAt: firebase.firestore.Timestamp,
   role: string,
+  level: number,
   email: string,
   displayName: string,
   photoURL: string,
   uid: string,
-  // added
   managerID: string,
+  companyEmail?: string,
 }
 export class Team {
   private _leader: User;

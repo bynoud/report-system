@@ -59,8 +59,8 @@ export class CreateUserComponent implements OnInit {
     .then(
       _ => {
         // this.resetFields();
-        this.router.navigate(['/']);
-        this.msgService.info(`Account ${value.email} had been Created and Login.`, true)
+        this.router.navigate(['./edit']);
+        this.msgService.info(`Account ${value.email} had been Created. Please go through initial setup`, true)
       })
     .catch(err => {
       console.warn("SSS");

@@ -11,7 +11,7 @@ import { User } from 'src/app/models/user';
 export class ReportSummaryComponent implements OnInit, OnDestroy {
 
   summaries: ReportSummaries[] = [];
-  unsubFns: (()=>void)[];
+  unsubFns: ()=>void;
   ready = false;
 
   constructor(
@@ -23,7 +23,7 @@ export class ReportSummaryComponent implements OnInit, OnDestroy {
   ngOnInit() {
     console.log(this.unsubFns, this.ready);
     
-    this.reportService.getSummaries(this.summaries)
+    this.reportService.getAllSummaries(this.summaries)
       .then(fns => {
         this.unsubFns = fns;
         this.ready = true;
@@ -31,7 +31,7 @@ export class ReportSummaryComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.unsubFns.forEach(fn => fn())
+    this.unsubFns()
   }
 
 }

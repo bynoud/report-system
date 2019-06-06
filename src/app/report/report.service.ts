@@ -215,7 +215,7 @@ export class ReportService implements OnDestroy {
         // let sums: ReportSummaries = allSums.find(s => s.user.uid == task.userID)
     }
 
-    async getSummaries(allSums: ReportSummaries[]) {
+    async getSummariesAllUsers(allSums: ReportSummaries[]) {
         return new Promise<(()=>void)[]>((resolve) => {
             const sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
             let unsubFns: (()=>void)[] = [];
@@ -246,7 +246,47 @@ export class ReportService implements OnDestroy {
                 })
             );
         })
+    }
+
+    async getAllSummaries(allSums: ReportSummaries[]) {
+        const activeUser = await this.authService.getActiveUser$();
+        const team = await this.authService.getMyTeam(activeUser, true);
+        const unsubsFns: (()=>void)[] = [];
+        const sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
+        console.log("teamXXX", team);
         
+        for (const user of team.members) {
+            const fn = await this.getSummaries(sinceDate, user.leader, allSums);
+            unsubsFns.push(...fn);
+        }
+
+        return () => {
+            unsubsFns.forEach(fn => fn())
+        }
+    }
+
+    async getSummaries(since: firestore.Timestamp, user: User, allSums: ReportSummaries[]):
+        Promise<(()=>void)[]> {
+        const unsubsFns: (()=>void)[] = [];
+        unsubsFns.push(this.fs.collection(`reports/${user.uid}/tasks`).orderBy('updatedAt', 'desc')
+            .where('updatedAt', '>', since)
+            .onSnapshot(snaps => {
+                snaps.docChanges().forEach(async change => {
+                    console.log("change", change);
+                    switch (change.type) {
+                        // add new task subcription on 'add' event
+                        case 'added':
+                                unsubsFns.push(await this.getSummary(change.doc, since, allSums));
+                            break;
+                        // switch position on update
+                        case 'modified':
+                            this.switchSummary(change.doc, change.oldIndex, change.newIndex, allSums);
+                            break;
+                    }
+                })
+            })
+        );
+        return unsubsFns;
     }
 
     // // Destruction way: Gather comment in last 7 days, group by user
@@ -288,8 +328,8 @@ export class ReportService implements OnDestroy {
             values.desc, values.dueMs, values.targets)
     }
 
-    private _addTask(userID: string, project: string, title: string, desc: string,
-        dueMs: number, targets: {desc: string}[]): Promise<Task> {
+    private async _addTask(userID: string, project: string, title: string, desc: string,
+        dueMs: number, targets: {desc: string}[]): Promise<any> {
 
         const taskRef = this.fs.collection(`reports/${userID}/tasks`).doc();
         var task: Task = {
@@ -300,18 +340,25 @@ export class ReportService implements OnDestroy {
             updatedAt: serverTime(),
             uid: taskRef.id,
         }
+        console.log("toadd task", task);
+        
+        // await taskRef.set(task);
+        // console.log("done add task");
+        
         var bw = this.fs.batch();
         bw.set(taskRef, task);
-        targets.forEach(target => this.addTarget(task, target.desc, "PENDING", bw))
         this.addDuedate(taskRef.path, dueMs, bw);
-        // to make sure task is added before new comment in timestamp, separate them
-        // this.addComm(task, "NewTask", `${task.uid}@@${project}@@${title}`, bw)
+        this.addComm(task, "NewTask", `${task.uid}@@${project}@@${title}`, bw)
+
         return bw.commit()
-            .then(() =>
-                this.addComm(task, "NewTask", `${task.uid}@@${project}@@${title}`)
-            )
-            .then(() => task)
+            .then(() => {
+                // to make sure task is added before new target in timestamp
+                const bw2 = this.fs.batch();
+                targets.forEach(target => this.addTarget(task, target.desc, "PENDING", bw2));
+                return bw2.commit();
+            })
             .catch(this.raise)
+            .then(() => task)
     }
 
     private addDuedate(taskPath: string, dueMs: number, batch: firestore.WriteBatch) {
@@ -375,6 +422,8 @@ export class ReportService implements OnDestroy {
             doCommit = true;
         }
         var commref = this.fs.collection(`${taskdoc}/comments`).doc();
+        console.log("addcomment", taskdoc, commref);
+        
         batch.set(commref, {
             // serverTime() will only valid after the entry submitted
             // this cause error when we subcribe to a valueChanges(), since it return a local value with 'null'
@@ -384,8 +433,11 @@ export class ReportService implements OnDestroy {
         // assume a comment is added mean task still open
         batch.update(this.fs.doc(taskdoc), {updatedAt: serverTime(),
             status: (type=="CloseTask")? "CLOSED" : "OPEN"})
+
         // add a field right under 'reports/{userID}/pdatedAt'
-        batch.update(this.fs.doc(`reports/${task.userID}`), {updatedAt: serverTime()})
+        // -> this required a field to be set at the beginining
+        // batch.update(this.fs.doc(`reports/${task.userID}`), {updatedAt: serverTime()})
+
         if (doCommit) return batch.commit().catch(err => this.error(err))
         else return null
     }

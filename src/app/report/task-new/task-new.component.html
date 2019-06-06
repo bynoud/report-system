@@ -4,8 +4,7 @@
 
     <div class="card-body">
 
-        <form [formGroup]="taskForm" (ngSubmit)="newTask()"
-            >
+        <form [formGroup]="taskForm" (ngSubmit)="newTask()">
 
             <div class="form-row">
                 <div class="form-group col-md-2">
@@ -60,7 +59,11 @@
                 </div>
             </div>
 
-            <button class="btn btn-info btn-lg" type="submit" [disabled]="!taskForm.valid">Submit</button>
+            <div class="d-flex">
+                <button class="btn btn-info btn-lg" type="submit" [disabled]="!taskForm.valid">Submit</button>
+                <button class="btn btn-outline-warning btn-lg ml-auto" type="button" (click)="onCancel()">Cancel</button>
+            </div>
+            
         </form>
     </div>  
 </div>  

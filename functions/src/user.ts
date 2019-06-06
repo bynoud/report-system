@@ -2,12 +2,13 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { fbstore } from './app-init';
 
-function getRoleLevel(role: string) {
+function getRoleLevel(role: string, level: number) {
     if (role == 'admin') { return 999999999 }
-    let lvl = +role.substring(2);
-    if (lvl >= 1000) lvl = 999;
-    if (role[0] == 't') return lvl;
-    else return lvl+1000;
+    if (level >= 1000) {
+        throw new Error('the role level is wrongly set');
+    }
+    if (role == 't') return level;
+    else return level+1000;
 }
 
 // create User
@@ -23,7 +24,8 @@ export function createUser(data: any, context: functions.https.CallableContext) 
             ...data,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             uid: uid,
-            role: "t-0",
+            role: "t",
+            level: 0,
         };
         return fbstore.doc(`users/${uid}`).set(vals)
     } else {
@@ -44,27 +46,55 @@ async function getUser(uid: string) {
 async function checkPermission(activeId: string, updateID: any) {
     const sameId = updateID == activeId;
     const uauth = await getUser(activeId);
-    if (uauth == null) return Promise.reject('User have not registered correctly');
+    if (uauth == null) throw new Error('User have not registered correctly');
     const upd = sameId ? uauth : await getUser(updateID);
-    if (upd == null) return Promise.reject('Update user not found');
+    if (upd == null) throw new Error('Update user not found');
 
     if (!sameId) {
         if (upd.managerID != activeId)
-            return Promise.reject("You are not direct manager of user")
+            throw new Error("You are not direct manager of user");
     }
 
     return {auth: uauth, update: upd};
 }
 
 
-export async function updateUser(data: any, context: functions.https.CallableContext) {
-    console.log("updateUser is called", data, context)
-    if (context && context.auth) {
-        const check = await checkPermission(context.auth.uid, data)
-        if (getRoleLevel(check.auth.role) < getRoleLevel(check.update.role))
-            return Promise.reject("Can only set role as high as your current level")
 
-        return fbstore.doc(`users/${data.uid}`).update(data)
+async function _setRole(activeID: string, updateID: string, role: string, level: number) {
+
+    console.log("setRole", activeID, updateID, role);
+    const check = await checkPermission(activeID, updateID);
+    if (getRoleLevel(check.auth.role, check.auth.level) < getRoleLevel(role, level)) {
+        throw new Error("Can only set role as high as your current level");
+    }
+    return fbstore.doc(`users/${updateID}`).update({role, level});
+}
+export function setRole(data: any, context: functions.https.CallableContext) {
+    if (context && context.auth) {
+        return _setRole(context.auth.uid, data.userID, data.role, data.level);
+    } else {
+        throw new functions.https.HttpsError('failed-precondition', 'login is required')
+    }
+}
+
+async function _setManager(activeID: string, managerID: string) {
+    console.log('setManager', activeID, managerID);
+    const manager = await getUser(managerID);
+    if (!manager) throw new Error("Unknown user ID");
+    if (manager.role!='m') throw new Error("Not a manager");
+    return fbstore.doc(`users/${activeID}`).update({managerID: managerID});
+}
+export function setManager(data: any, context: functions.https.CallableContext) {
+    if (context && context.auth) {
+        return _setManager(context.auth.uid, data.managerID);
+    } else {
+        throw new functions.https.HttpsError('failed-precondition', 'login is required')
+    }
+}
+
+export function setCompanyEmail(data: any, context: functions.https.CallableContext) {
+    if (context && context.auth) {
+        return fbstore.doc(`users/${context.auth.uid}`).update({companyEmail: data.companyEmail})
     } else {
         throw new functions.https.HttpsError('failed-precondition', 'login is required')
     }

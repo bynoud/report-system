@@ -10,16 +10,6 @@ body {
   margin-top: 5rem !important;
 }
 
-#main-content {
-  min-width: 100vw;
-}
-@media (min-width: 768px) {
-  #main-content {
-    min-width: 0;
-    width: 100%;
-  }
-}
-
 
 
 .text-system {
