@@ -1,4 +1,14 @@
 
+@import 'styles/main.scss';
+
+/* truncated on close */
+.card-header.collapsed + .card-body .truncate-on-close {
+    @extend .text-truncate
+}
+.card-header.collapsed .truncate-on-close {
+    @extend .text-truncate
+}
+
 /* bigger text for badge */
 .badge.badge-pill {
     font-size: 1em;
@@ -62,6 +72,12 @@
     margin: 0 auto;
 }
 
-button.disabled {
-    cursor: auto;
+
+.btn-add-target {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--success);
+}
+.btn-add-target.fa-times-circle {
+    color: var(--danger);
 }

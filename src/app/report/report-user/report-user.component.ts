@@ -29,6 +29,7 @@ export class ReportUserComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subs.push(this.route.params.subscribe( params => {
+      this.tasks = null; // remove all reports right at the time route change, otherwise there's a glitch
       this.getTasks(params['id'])
       // var userID = params['id'];
       // console.log("detal id", userID);

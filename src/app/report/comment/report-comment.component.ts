@@ -51,7 +51,7 @@ export class ReportCommentComponent implements OnInit {
         break;
       case "UpdateTarget":
         // `${target.uid}@@${target.desc}@@${target.status}@@${status}`
-        txt = `${targetTransitionDesc(secs[2], secs[3])} Target "${secs[1]}"`;;
+        txt = `${targetTransitionDesc(secs[2], secs[3], true)} Target "${secs[1]}"`;;
         break;
       case "Redue":
         // `${task.due.toMillis()}@@${dueMs}`

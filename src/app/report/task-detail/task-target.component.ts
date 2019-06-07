@@ -6,7 +6,7 @@ const TARGET_CFGS: {[s: string]: {icon: string, desc: string, next: Status[]}} =
     PENDING: {
       icon: "fas fa-hourglass-start",
       desc: "This Target has not been started",
-      next: ["ONGOING", "SUSPENDED", "DISCARDED"],
+      next: ["ONGOING", "SUSPENDED", "DISCARDED", "DONE"],
     },
     ONGOING: {
       icon: "fas fa-play",
@@ -37,19 +37,30 @@ const NEXT_TARGET_DESC = {
     DONE: "Mark this Target as Finished with comment ...",
 }
 
-export function targetTransitionDesc(cur: string, nxt: string) {
+export function targetTransitionDesc(cur: string, nxt: string, pass: boolean) {
+  let r: string;
   switch (nxt) {
     case 'ONGOING':
-      return cur=='PENDING'? "Start" :
-              cur=='SUSPENDED' ? "Resume" : "Re-open";
+      r = cur=='PENDING'? "Start" :
+          cur=='SUSPENDED' ? "Resume" : "Re-open";
+      break;
     case 'SUSPENDED':
-      return 'Suspend';
+      r = 'Suspend';
+      break;
     case 'DISCARDED':
-      return 'Remove';
-    case 'DONE':
-      return 'Finish'
+      r = 'Remove';
+      break;
+    default:
+      r = 'Finish'
   }
 
+  if (pass) {
+    const lastChar = r[r.length-1];
+    if (lastChar=='e') r += "d";
+    // else if (lastChar=='n') r += "ned";
+    else r += "ed";
+  }
+  return r;
 }
   
 @Component({
@@ -62,6 +73,8 @@ export class TaskTargetComponent implements OnInit {
     @Input() task: Task;
     @Input() target: Target;
     @Input() allowModify: boolean;
+    @Input() isInput: boolean;
+
     icon: string;
     desc: string;
     nextTargets: {name: Status, desc: string}[];
@@ -71,17 +84,21 @@ export class TaskTargetComponent implements OnInit {
     ) {}
 
     ngOnInit() {
+      if (this.isInput == null) this.isInput = false;
+      else if (this.isInput) this.allowModify = true;
+
       console.log(this.allowModify);
-      
-        const stt = this.target.status;
-        const cfg = TARGET_CFGS[stt];
-        this.icon = cfg.icon;
-        this.desc = cfg.desc;
-        this.nextTargets = cfg.next.map<{name: Status, desc: string}>(tgt => {
-            let desc = targetTransitionDesc(stt, tgt);
-            desc += " this Target" + (tgt != "ONGOING" ? " ..." : "");
-            return {name: tgt, desc: desc}
-        })
+
+      const stt = this.target.status;
+      const cfg = TARGET_CFGS[stt];
+      this.icon = cfg.icon;
+      this.desc = cfg.desc;
+      this.nextTargets = cfg.next.map<{name: Status, desc: string}>(tgt => {
+          let desc = targetTransitionDesc(stt, tgt, this.isInput);
+          if (this.isInput) desc = "Mark it as " + desc;
+          else desc += " this Target" + (tgt != "ONGOING" ? " ..." : "");
+          return {name: tgt, desc: desc}
+      })
     }
 
     

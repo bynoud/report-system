@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReportRoutingModule } from './report.routes';
-import { ReportComponent } from './report.component';
+import { ReportComponent, ReportLandingComponent } from './report.component';
 import { ReportSummaryComponent } from './report-summary/report-summary.component';
 import { ReportUserComponent } from './report-user/report-user.component';
 import { TaskDetailComponent } from './task-detail/task-detail.component';
@@ -18,6 +18,7 @@ import { ReportCommentListComponent } from './comment/report-comment-list.compon
 @NgModule({
   declarations: [
     ReportComponent,
+    ReportLandingComponent,
     ReportSummaryComponent,
     ReportSummaryDetailComponent,
     ReportUserComponent,

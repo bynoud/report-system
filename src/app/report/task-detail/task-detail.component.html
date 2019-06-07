@@ -7,7 +7,7 @@
           [style.color]="taskStatus.iconColor"
           data-toggle="tooltip" data-placement="right" [title]="taskStatus.desc"></i>
         <span class="text-primary font-weight-bold mr-2 text-nowrap">{{task.project}}</span>
-        <span class="text-secondary mr-3 truncate-on-close text-truncate font-weight-bold">
+        <span class="text-secondary mr-3 truncate-on-close font-weight-bold">
           {{task.title}}
         </span>
         <i class="fas fa-angle-up more-less"></i>
@@ -16,21 +16,22 @@
 
   <div class="card-body py-3">
     <!-- task description -->
-    <p class="card-title truncate-on-close text-truncate text-muted">{{task.desc}}</p>
+    <p class="card-title truncate-on-close text-muted">{{task.desc}}</p>
 
     <!-- task deadline -->
-    <div class='mb-3'>
+    <div class='mb-3 d-flex'>
         <div class="btn-group btn-group-sm">
             <button type="button" class="btn btn-outline-info btn-round-left" disabled>
                     {{dateFormat(task.enteredAt)}}
             </button>
 
             <button type="button" class="btn dropdown-toggle btn-round-right" data-toggle="dropdown"
-              [ngClass]="{'disabled': !allowModify}"
+              [class.disabled]="!allowModify" [disabled]="!allowModify"
               [style.color]="taskStatus.iconColor" [style.borderColor]="taskStatus.iconColor"
               [appLoadingBy]="loadingRedue$">
-                <span data-toggle="tooltip" data-placement="right" title="Click to open Re-schedule form">
-                  {{dateFormat(task.due)}}</span>
+              <span *ngIf="allowModify" data-toggle="tooltip" data-placement="right" title="Click to open Re-schedule form">
+                {{dateFormat(task.due)}}</span>
+              <span *ngIf="!allowModify">{{dateFormat(task.due)}}</span>
             </button>
 
             <div class="dropdown-menu">
@@ -55,7 +56,17 @@
                 <p *ngFor="let d of duedates" class="dropdown-item disabled" href=''>{{dateFormat(d.due)}}</p>
             </div>
         </div>
+
+        <i *ngIf="allowModify" class="btn-add-target ml-auto"
+          [ngClass]="newTargetOpened ? 'fas fa-times-circle' : 'fas fa-plus-circle'"
+          (click)="toggleNewTarget()"
+          data-toggle="tooltip" data-placement="bottom" 
+            [title]="newTargetOpened ? 'Discard new Target' : 'Add new Target'"></i>
     </div>
+
+      
+
+    <app-task-target *ngIf="newTargetOpened" [task]="task" [target]="newTarget" [isInput]="true"></app-task-target>
 
     <!-- task targets -->
     <div *ngFor="let target of targets">

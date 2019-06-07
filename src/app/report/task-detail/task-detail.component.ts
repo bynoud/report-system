@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, OnDestroy } from '@angular/core';
-import { Task, Comment, DueDate, Target, nowMillis, Status, StatusList, dateFormat } from 'src/app/models/reports';
+import { Task, Comment, DueDate, Target, nowMillis, Status, StatusList, dateFormat, nowTimestamp } from 'src/app/models/reports';
 import { ReportService } from '../report.service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
@@ -40,7 +40,7 @@ const STATUS_CFGS: {[s:string]: {desc: string, icon: string, color: string}} = {
 @Component({
   selector: 'app-task-detail',
   templateUrl: './task-detail.component.html',
-  styleUrls: ['./task-detail.component.css']
+  styleUrls: ['./task-detail.component.scss']
 })
 export class TaskDetailComponent implements OnInit, OnDestroy {
   @Input() task: Task;
@@ -57,6 +57,10 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
 
   targets: Target[] = [];
   subs: Subscription[] = [];
+
+  newTarget: Target = {at: nowTimestamp(), desc: "", status: "PENDING", uid: ""}; // placeholder
+  newTargetOpened = false;
+
 
   ready = false;
 
@@ -157,6 +161,11 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
   dateFormat(timestamp: firebase.firestore.Timestamp) {
     return dateFormat(timestamp)
   }
+
+  toggleNewTarget() {
+    this.newTargetOpened = !this.newTargetOpened;
+  }
+
 
   ngOnDestroy() {
     console.log("destroy task", this.index);
