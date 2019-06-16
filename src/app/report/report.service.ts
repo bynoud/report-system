@@ -32,7 +32,7 @@ export class ReportService implements OnDestroy {
         this.fs = afs.firestore
         
         this.subs.push(this.authService.activeUser$.subscribe(user => {
-            console.log("report service user", user);
+            // console.log("report service user", user);
             
             if (user) this.userID = user.uid
             else {
@@ -44,7 +44,7 @@ export class ReportService implements OnDestroy {
 
     
     ngOnDestroy() {
-        console.log("is destroy");
+        // console.log("is destroy");
         this.unsubAll();
         this.subs.forEach(sub => sub.unsubscribe())
     }
@@ -53,45 +53,45 @@ export class ReportService implements OnDestroy {
     // return
     // [0] pointer to task array
     // [1] () => void, used to unsubcribe
-    getTaskUpdates(userID: string): Promise<[Task[], ()=>void]> {
+    getTaskUpdatesDirect(userID: string): Promise<[Task[], ()=>void]> {
         return new Promise<any>((resolve, reject) => {
             let tasks: Task[] = [];
             const unsub = this.fs.collection(`reports/${userID}/tasks`)
-            .where("status", "==", "OPEN").orderBy("updatedAt", "desc")
-            .onSnapshot(
-                // next
-                snaps => {
-                    console.warn("sanpshot----");
-                    
-                    snaps.docChanges().forEach(change => {
-                        console.log("change", change, change.doc.data())
-                        const update = <Task>change.doc.data();
-                        const [oid, nid] = [change.oldIndex, change.newIndex];
-                        if (change.type == "added") {
-                            tasks.push(update)
-                        } else if(change.type == "removed") {
-                            tasks.splice(oid, 1)
-                        } else {
-                            // if (change.type == "modified")
-                            if (oid != nid) {
-                                // the order had been changed
-                                // [tasks[oid], tasks[nid]] = [tasks[nid], tasks[oid]];    // angular will correctly swap component value, without recreate them
-                                // WARN : Dont change the order of display list, it's anoying
+                .where("status", "==", "OPEN").orderBy("updatedAt", "desc")
+                .onSnapshot(
+                    // next
+                    snaps => {
+                        // console.warn("sanpshot----");
+                        
+                        snaps.docChanges().forEach(change => {
+                            // console.log("change", change, change.doc.data())
+                            const update = <Task>change.doc.data();
+                            const [oid, nid] = [change.oldIndex, change.newIndex];
+                            if (change.type == "added") {
+                                tasks.push(update)
+                            } else if(change.type == "removed") {
+                                tasks.splice(oid, 1)
                             } else {
-                                // the content is changed
-                                for (let k in update) {
-                                    tasks[change.oldIndex][k] = update[k];
+                                // if (change.type == "modified")
+                                if (oid != nid) {
+                                    // the order had been changed
+                                    // [tasks[oid], tasks[nid]] = [tasks[nid], tasks[oid]];    // angular will correctly swap component value, without recreate them
+                                    // WARN : Dont change the order of display list, it's anoying
+                                } else {
+                                    // the content is changed
+                                    for (let k in update) {
+                                        tasks[change.oldIndex][k] = update[k];
+                                    }
                                 }
                             }
-                        }
-                    })
+                        })
 
-                    // resolve promise
-                    resolve([tasks, unsub]);
-                },
-                // error
-                err => { this.error(err, "taskupdate"); reject(err) }
-            )
+                        // resolve promise
+                        resolve([tasks, unsub]);
+                    },
+                    // error
+                    err => { this.error(err, "taskupdate"); reject(err) }
+                )
         })
         // return this.fs.collection(`reports/${userID}/tasks`)
         //     .where("status", "==", "OPEN").orderBy("updatedAt", "desc")
@@ -126,6 +126,40 @@ export class ReportService implements OnDestroy {
         //         // error
         //         err => this.error(err)
         //     )
+    }
+
+    // directly update the data
+    getTaskUpdates(userID: string, tasks: Task[]) {
+        return this.afs.collection<Task>(`reports/${userID}/tasks`, ref => ref.where("status", "==", "OPEN").orderBy("updatedAt", "desc"))
+            .stateChanges().pipe(
+                map(actions => {
+                    // console.log("actions", actions);
+                    
+                    actions.forEach(action => {
+                        const update = action.payload.doc.data();
+                        // we don't keep the task order same as query order. This is to prevent the task jumping around when updated
+                        // so the oldIndex/newIndex now will not show correct possition in our list. Find it by 'uid' instead
+                        if (action.type == 'added') {
+                            tasks.push(update);
+                        } else {
+                            const index = tasks.findIndex(task => task.uid == update.uid);
+                            if (index < 0) {
+                                console.error("This should never happend");
+                                return;
+                            }
+                            if (action.type == 'removed') {
+                                tasks.splice(index, 1);
+                            } else {
+                                // the content is changed (and is re-ordered), it may just sub-collection (comments),
+                                // or maybe included Task collection is changed itself (dueDate)
+                                for (let k in update) {
+                                    tasks[index][k] = update[k];
+                                }
+                            }
+                        }
+                    })
+                })
+            )
     }
 
     // WARN: This will cause View to be destroyed & rerender
@@ -224,7 +258,7 @@ export class ReportService implements OnDestroy {
                 .onSnapshot(tasksSnaps => {
                     let sumPromises: Promise<void>[] = [];
                     tasksSnaps.docChanges().forEach(change => {
-                        console.log("change", change);
+                        // console.log("change", change);
                         switch (change.type) {
                             
                             // add new task subcription on 'add' event
@@ -253,7 +287,7 @@ export class ReportService implements OnDestroy {
         const team = await this.authService.getMyTeam(activeUser, true);
         const unsubsFns: (()=>void)[] = [];
         const sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
-        console.log("teamXXX", team);
+        // console.log("teamXXX", team);
         
         for (const user of team.members) {
             const fn = await this.getSummaries(sinceDate, user.leader, allSums);
@@ -272,7 +306,7 @@ export class ReportService implements OnDestroy {
             .where('updatedAt', '>', since)
             .onSnapshot(snaps => {
                 snaps.docChanges().forEach(async change => {
-                    console.log("change", change);
+                    // console.log("change", change);
                     switch (change.type) {
                         // add new task subcription on 'add' event
                         case 'added':
@@ -340,7 +374,7 @@ export class ReportService implements OnDestroy {
             updatedAt: serverTime(),
             uid: taskRef.id,
         }
-        console.log("toadd task", task);
+        // console.log("toadd task", task);
         
         // await taskRef.set(task);
         // console.log("done add task");
@@ -357,7 +391,7 @@ export class ReportService implements OnDestroy {
                 targets.forEach(target => this.addTarget(task, target.desc, "PENDING", bw2));
                 return bw2.commit();
             })
-            .catch(this.raise)
+            .catch(err => this.raise)
             .then(() => task)
     }
 
@@ -422,7 +456,7 @@ export class ReportService implements OnDestroy {
             doCommit = true;
         }
         var commref = this.fs.collection(`${taskdoc}/comments`).doc();
-        console.log("addcomment", taskdoc, commref);
+        // console.log("addcomment", taskdoc, commref);
         
         batch.set(commref, {
             // serverTime() will only valid after the entry submitted
@@ -518,7 +552,7 @@ export class ReportService implements OnDestroy {
                     })
             }
         await nextComments();   // run it to get initial value
-        console.warn("here", lastSeen);
+        // console.warn("here", lastSeen);
         
 
         const newCommentQuery = firstSeen ? query.endBefore(firstSeen) : query;
@@ -527,7 +561,7 @@ export class ReportService implements OnDestroy {
                 snaps.docChanges().forEach(change => {
                     // for serverTime(), initial value will be EPOC time,
                     // then an 'modified' event will fired to correct value when server updated
-                    console.warn("comment changed", change);
+                    // console.warn("comment changed", change);
                     const comm = <Comment>change.doc.data();
                     // DONT take the 'added' event, use 'modified' instead
                     // if (change.type == "added") {
@@ -573,7 +607,7 @@ export class ReportService implements OnDestroy {
     error(err: any, deb: string = "") {
         console.error(deb, err)
         this.msgService.error("Something when wrong. This normally caused by an unhealthy network")
-        return Promise.resolve(null)
+        return Promise.reject(null)
     }
 
     raise(err: any) {
@@ -595,7 +629,7 @@ export class ReportService implements OnDestroy {
     }
 
     unsubAll() {
-        console.log("reportsrv unsub all");
+        // console.log("reportsrv unsub all");
         this.subcriptions.forEach(sub => { if (!sub.closed) sub.unsubscribe() });
         this.subcriptions = [];
     }

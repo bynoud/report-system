@@ -13,6 +13,7 @@ import { serverTime } from 'src/app/models/reports';
 import { AngularFireFunctions } from '@angular/fire/functions';
 import { FCFService } from './fcf.service';
 import { FCMService } from './fcm.service';
+import { NgForage } from 'ngforage';
 
 // this is also act as AuthGaurd
 
@@ -34,6 +35,7 @@ export class AuthService implements CanActivate {
     private afAuth: AngularFireAuth,
     private afs: AngularFirestore,
     private fcf: FCFService,
+    private ngForage: NgForage,
     private router: Router,
     private msgService: FlashMessageService,
     private fcmService: FCMService
@@ -46,19 +48,19 @@ export class AuthService implements CanActivate {
 
   private subAuthState() {
     this._authSub = this.afAuth.authState.subscribe(fbUser => {
-      console.log("AUTH FB user", fbUser);
+      // console.log("AUTH FB user", fbUser);
       if (fbUser) {
         // if (!fbUser.emailVerified) {
         //   this.userChange(null, fbUser);
         // } else {
         this.fs.doc(`users/${fbUser.uid}`).get()
-          .then(user => this.userChange(<User>user.data(), fbUser))
+          .then(user => this.userChange(<User>user.data()))
           .catch(err => {
-            this.userChange(null, fbUser)
             this.error(err)
+            this.userChange(null)
           })
       } else {
-        this.userChange(null, null)
+        this.userChange(null)
       }
     })
   }
@@ -67,9 +69,8 @@ export class AuthService implements CanActivate {
     this._authSub.unsubscribe();
   }
 
-  private async userChange(user: User, fbUser: firebase.User) {
+  private userChange(user: User) {
     console.warn("user changed", user);
-    
     this._activeUser$.next(user)
     // this._activeFBUser$.next(fbUser);
     this._authUserChanged$.next(user ? true : false);
@@ -78,7 +79,7 @@ export class AuthService implements CanActivate {
 
 
   onUserChanged$() {
-    return this._activeUser$;
+    return this._activeUser$.asObservable();
   }
 
   onLoginChanged$() {
@@ -95,14 +96,14 @@ export class AuthService implements CanActivate {
 
   error(err: any) {
     this.msgService.error(err);
-    console.error("X",err);
+    console.error(err);
     // console.trace();
-    return Promise.reject(err);
+    return null;
   }
 
   raise(err: any) {
     this.msgService.error(err);
-    console.error("errpromise",err);
+    console.error(err);
     return err;
   }
 
@@ -110,7 +111,7 @@ export class AuthService implements CanActivate {
     return this._activeUser$.pipe(
       take(1),
       map(user => {
-        console.warn("can active", user);
+        // console.warn("can active", user);
         
         if (user == null) {
           this.router.navigate(['/'])
@@ -132,11 +133,11 @@ export class AuthService implements CanActivate {
   private async createUser(userCred: auth.UserCredential, opts: {[s:string]: string} = {}) {
     if (userCred.additionalUserInfo.isNewUser) {
       console.log("create a new user");
-      const res = await this.fcf.createUser({managerID: "", ...opts})
+      await this.fcf.createUser({managerID: "", ...opts})
         .catch(err => this.error(err))
     }
 
-    this.fcmService.addFcmToken(userCred.user.uid)
+    // this.fcmService.addFcmToken(userCred.user.uid)
     return userCred;
   }
   
@@ -155,7 +156,7 @@ export class AuthService implements CanActivate {
 
 
   getUserWith(field: string, op: firestore.WhereFilterOp, value: any) {
-    console.log("getuserswith", field, op, value);
+    // console.log("getuserswith", field, op, value);
     
     return this.fs.collection('users').where(field, op, value).get()
       .then(snaps => snaps.docs.map(doc => <User>doc.data()))
@@ -185,7 +186,7 @@ export class AuthService implements CanActivate {
     // get members
     let team = new Team(user);
     team.addMembers(await this.getUserWith('managerID', '==', user.uid));
-    console.log("getteam", user, team);
+    // console.log("getteam", user, team);
     
     if (upTeamAtBottom && team.size == 0) {
         if (user.managerID) {
@@ -293,11 +294,11 @@ export class AuthService implements CanActivate {
 
   private oAuthLogin(provider: auth.AuthProvider) {
     this.unsubAuthState();
-    console.log("start");
+    // console.log("start");
     let userCred: auth.UserCredential;
     
     return this.afAuth.auth.signInWithPopup(provider).then(cred => {
-      console.log("finish popup");
+      // console.log("finish popup");
       userCred = cred;
       return this.createUser(cred);
     })
@@ -310,7 +311,10 @@ export class AuthService implements CanActivate {
   async signOut() {
     const uid = await this.getActiveUser$().then(user => user ? user.uid : "");
     if (!uid) return;
-    await this.fcmService.removeFcmToken(uid);
+    // await this.fcmService.removeFcmToken(uid);
+    // best effort try. If failed (ex: offline logout or some weird firebase error)
+    // then SWorker will help to clean it later
+    this.fcmService.removeToken(uid)
     return this.afAuth.auth.signOut()
       .then(() => this.waitLoginChanged$())
       .catch(err => this.error(err))

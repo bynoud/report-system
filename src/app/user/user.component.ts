@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-user',
-  template: '<router-outlet></router-outlet>',
+  template: '<div class="container"><router-outlet></router-outlet></div>',
   styleUrls: ['./user.component.css']
 })
 export class UserComponent {

@@ -14,7 +14,7 @@
         <div class="dropdown-menu">
             <h6 class="dropdown-header">{{desc}}</h6>
             <a *ngFor="let next of nextTargets"
-                class="dropdown-item text-left" href="#"
+                class="dropdown-item text-left" [routerLink]="null"
                 [class.active]="next.name == target.status"
                 (click)="submitStatus(next.name)">
                 {{next.desc}}</a>
@@ -28,7 +28,9 @@
     <ng-template #inputTempl>
         <input type="text" *ngIf="isInput" class="form-control target-text" placeholder="What will be archived when Finished" [(ngModel)]="target.desc">
         <div class="input-group-append">
-            <button class="btn btn-sm btn-outline-success" type="button" [disabled]="!target.desc||!target.desc.trim()" (click)="addTarget()">Add</button>
+            <button class="btn btn-sm btn-outline-success" type="button" 
+                [appLoadingBy]="addingTarget$"
+                [disabled]="!target.desc||!target.desc.trim()" (click)="addTarget()">Add</button>
         </div>
     </ng-template>
 

@@ -1,38 +1,45 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnInit } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFireMessaging } from '@angular/fire/messaging';
-import { mergeMapTo } from 'rxjs/operators';
+import { mergeMapTo, map, mergeMap, catchError, mapTo, filter, tap } from 'rxjs/operators';
 import { take } from 'rxjs/operators';
-import { BehaviorSubject, Subscription } from 'rxjs'
+import { BehaviorSubject, Subscription, of, throwError, Observable, ReplaySubject } from 'rxjs'
 import { AngularFirestore } from '@angular/fire/firestore';
 import { firestore } from 'firebase';
 import { FlashMessageService } from '../flash-message/flash-message.service';
+import { User } from 'src/app/models/user';
+import { AuthService } from './auth.service';
+import { FCFService } from './fcf.service';
+import { FcmToken, FcmData } from 'src/app/models/fcm';
+
 
 @Injectable({providedIn: 'root'})
 export class FCMService {
 
-  currentMessage = new BehaviorSubject(null);
-  subs = new Subscription();
-  curTok = "";
+  // currentMessage = new BehaviorSubject(null);
+  // subs = new Subscription();
+  // curTok = "";
 
+  userID = "";
   fs: firestore.Firestore;
+  tokenSub: Subscription;
+
+  private notifPerm$ = new ReplaySubject<NotificationPermission>(1);
 
   constructor(
-    private afs: AngularFirestore,
-    private angularFireAuth: AngularFireAuth,
-    private angularFireMessaging: AngularFireMessaging,
-    private msgService: FlashMessageService
+    // private afAuth: AngularFireAuth,
+    private afStore: AngularFirestore,
+    private afMessaging: AngularFireMessaging,
+    private msgService: FlashMessageService,
   ) {
-    this.fs = afs.firestore;
-    // this.angularFireMessaging.messaging.subscribe(
-    //   (_messaging) => {
-    //     _messaging.onMessage = _messaging.onMessage.bind(_messaging);
-    //     _messaging.onTokenRefresh = _messaging.onTokenRefresh.bind(_messaging);
-    //   }
-    // )
-    // this.angularFireMessaging.tokenChanges.subscribe()
+    this.fs = afStore.firestore;
+    this.notifPerm$.next(Notification.permission);
+    // this.afAuth.authState.subscribe(fbUser => {
+    //   this.userID = fbUser ? fbUser.uid : ""
+    // })
   }
+
 
   error(err: any) {
     this.msgService.error(err);
@@ -41,81 +48,109 @@ export class FCMService {
     return Promise.reject(err);
   }
 
-  addFcmToken(uid: string) {
-    console.log("get FCM token");
+
+  // FCM tokens is added when a token refresh event triggered
+  // obsoleted FCM token remove is handled by cloud functions. When a push notification execute, token which failed to received will be removed.
+
+  // Data structure
+  //  secrets/  <col>
+  //    <userID>          <doc>
+  //      fcmTokens/      <col>
+  //        <tokenID>     <doc>
+  //          userID: string
+  //          lastUsed: Date
+  //          
+  private async sendTokenToServer(uid: string, tok: string) {
+    console.log("adding token:", tok);
     
-    this.subs.add(this.angularFireMessaging.requestToken.subscribe(
-      async tok => {
-        const sharedRef = this.fs.doc(`shared/${uid}/services/fcm`);
-        const secretRef = this.fs.doc(`secrets/${uid}/services/fcm`);
-        const shared = await sharedRef.get();
-        const bw = this.fs.batch();
-        if (!shared.exists) {
-          console.log("need create fcm");
-          bw.set(sharedRef, {tokens: true});
-          bw.set(secretRef, {tokens: []});
-        }
-        if (this.curTok != '') {
-          bw.update(secretRef, {
-            tokens: firestore.FieldValue.arrayRemove(this.curTok)
-          })
-        }
-        bw.update(secretRef, {
-          tokens: firestore.FieldValue.arrayUnion(tok)
+    if (tok) {
+      // const docRef = this.fs.collection(`secrets/${uid}/fcmTokens`).doc()
+      // await docRef.set({
+      //   uid: docRef.id, userID: uid, token: tok,
+      //   lastUsed: <firestore.Timestamp>firestore.FieldValue.serverTimestamp()
+      // })
+      await this.afStore.doc<FcmToken>(`secrets/${uid}/fcmTokens/${tok}`).set({
+          uid: tok, userID: uid, token: tok,
+          lastUsed: <firestore.Timestamp>firestore.FieldValue.serverTimestamp()
         })
-        this.curTok = tok;
-        return bw.commit();
-      },
-      err => {
+      return tok;
+    }
+    return "";
+  }
+
+  private requestPermission() {
+    return this.afMessaging.requestPermission.pipe(
+      map(() => {
+        
+        return true
+      }),
+      catchError(err => {
         console.error(err)
-        this.msgService.warn("The notification is denied. You can not get any inform from other memebrs")
+        this.msgService.warn("The notification is denied. You can not get any inform from other members")
+        return of(false)
+      }),
+      tap(() => {
+        console.warn("tap", Notification.permission);
+        
+        this.notifPerm$.next(Notification.permission)
       })
     )
   }
 
-  removeFcmToken(uid: string) {
-    console.log("remove FCM token", uid, this.curTok);
-    this.subs.unsubscribe();
-    return this.afs.doc(`secrets/${uid}/services/fcm`).update({
-      tokens: firestore.FieldValue.arrayRemove(this.curTok)
-    })
-      .then(() => this.curTok = "")
-      .catch(err => console.error("remove failed", err))
+  onPermissionChanged() {
+    return this.notifPerm$.asObservable();
+  }
+
+  requestToken(uid: string) {
+    console.log("get FCM token");
+    this.userID = uid;
+    this.tokenSub = this.requestPermission().pipe(
+      mergeMap(ok => ok ? this.afMessaging.tokenChanges : of("")),
+      mergeMap(tok => this.sendTokenToServer(uid, tok)),
+      catchError(err => {
+        console.error(err)
+        this.msgService.error("Technical difficuties. Try again later")
+        return of("")
+      })
+    ).subscribe();
+
+    
+  }
+
+  async removeToken(userID: string, tokenID: string = "") {
+    if (!tokenID) {
+      tokenID = await this.afMessaging.getToken.toPromise()
+      console.warn("get token", tokenID);
+    }
+    if (this.tokenSub && !this.tokenSub.closed) this.tokenSub.unsubscribe();
+    if (!tokenID) return;
+    await this.afMessaging.deleteToken(tokenID)
+    return this.afStore.doc(`secrets/${userID}/fcmTokens/${tokenID}`).delete()
   }
 
 
-  // /**
-  //  * update token in firebase database
-  //  * 
-  //  * @param userId userId as a key 
-  //  * @param token token as a value
-  //  */
-  // updateToken(userId, token) {
-  //   // we can change this function to request our backend service
-  //   this.angularFireAuth.authState.pipe(take(1)).subscribe(
-  //     () => {
-  //       // const data = {};
-  //       // data[userId] = token
-  //       // this.angularFireDB.object('fcmTokens/').update(data)
-  //       this.afs.doc(`tmps/${userId}`).set({fcmTokens: token})
-  //     })
-  // }
-
-  // // /**
-  // //  * request permission for notification from firebase cloud messaging
-  // //  * 
-  // //  * @param userId userId
-  // //  */
-  // // requestPermission() {
-  // //   return this.angularFireMessaging.requestToken.pipe(take(1)).toPromise()
-  // // }
 
   /**
    * hook method when new notification received in foreground
    */
-  onMessageRecieved() {
+  onDataRecieved() {
     console.log("on message called");
     
-    return this.angularFireMessaging.messages
+    return this.afMessaging.messages.pipe(
+      map(msg => <FcmData>msg['data']),
+      filter(data => this.checkFcmToken(data)),
+    )
   }
+
+  private checkFcmToken(data: FcmData) {
+    // if current user is different, ask server to remove this. I know it's not secured, but I don't find any better way for now...
+    console.log("checking token", this.userID, data);
+    if (!this.userID || !data || (data.userID != this.userID)) {
+      // this.fcfService.removeFcmToken(data.userID, this.curTok)
+      this.removeToken(data.userID, data.uid)
+      return false;
+    }
+    return true;
+  }
+
 }

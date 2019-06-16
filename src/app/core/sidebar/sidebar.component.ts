@@ -57,11 +57,12 @@ export class SidebarComponent {
     onLogout() {
         console.log("to log out");
         // prevent permission denied error, when the logout is fast & navigate is not active then the page is not destroyed yet
-        this.router.navigate(['/signout']);
-        // this.authService.signOut().then(() => {
-        // this.router.navigate(["/"]);
-        // this.msgservice.info("Successful Logged out", true)
-        // })
+        // -> it's caused by not unsubscribe when route-param is changed, this fix is not work
+        // this.router.navigate(['/signout']);
+        this.authService.signOut().then(() => {
+            this.router.navigate(["/"]);
+            this.msgservice.info("Successful Logged out", true)
+        })
     }
 
     onNewTask() {

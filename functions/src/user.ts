@@ -27,7 +27,11 @@ export function createUser(data: any, context: functions.https.CallableContext) 
             role: "t",
             level: 0,
         };
-        return fbstore.doc(`users/${uid}`).set(vals)
+        const bw = fbstore.batch()
+        bw.set(fbstore.doc(`users/${uid}`), vals)
+        // placeholder for all setting here
+        bw.set(fbstore.doc(`secrets/${uid}`), {fcmTokens: []})
+        return bw.commit();
     } else {
         throw new functions.https.HttpsError('failed-precondition',
             'login is required'

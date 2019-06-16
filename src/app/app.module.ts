@@ -12,6 +12,9 @@ import { AngularFireAuthModule } from '@angular/fire/auth';
 import { AngularFireFunctionsModule } from '@angular/fire/functions';
 
 import { environment } from '../environments/environment';
+
+import {NgForageModule, Driver} from 'ngforage';
+
 import { AppRoutingModule } from './app.routes';
 import { ReportModule } from './report/report.module';
 import { UserModule } from './user/user.module';
@@ -41,7 +44,7 @@ import { PageSignoutComponent } from './core/main-pages/page-signout.component';
     ReportModule,
     UserModule,
     AppRoutingModule,
-    SharedModule
+    SharedModule,
   ],
   providers: [],
   bootstrap: [AppComponent],

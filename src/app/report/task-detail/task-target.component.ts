@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from "@angular/core";
 import { Task, Target, Status, StatusList } from 'src/app/models/reports';
 import { ReportService } from '../report.service';
+import { BehaviorSubject } from 'rxjs';
 
 const TARGET_CFGS: {[s: string]: {icon: string, desc: string, next: Status[]}} = {
     PENDING: {
@@ -73,21 +74,25 @@ export class TaskTargetComponent implements OnInit {
     @Input() task: Task;
     @Input() target: Target;
     @Input() allowModify: boolean;
-    @Input() isInput: boolean;
+    @Input() inputCallback: ()=>Promise<void>;
 
+    isInput: boolean;
     icon: string;
     desc: string;
     nextTargets: {name: Status, desc: string}[];
+
+    addingTarget$ = new BehaviorSubject<boolean>(false);
 
     constructor(
         private reportService: ReportService
     ) {}
 
     ngOnInit() {
-      if (this.isInput == null) this.isInput = false;
-      else if (this.isInput) this.allowModify = true;
+      
+      this.isInput = this.inputCallback != null;
+      if (this.isInput) this.allowModify = true;
 
-      console.log(this.allowModify);
+      // console.log(this.allowModify);
 
       const stt = this.target.status;
       const cfg = TARGET_CFGS[stt];
@@ -103,8 +108,17 @@ export class TaskTargetComponent implements OnInit {
 
     
     submitStatus(stt: Status) {    
-        console.log("target", this.target)
-        this.reportService.targetStatus(this.task, this.target, stt)
+        // console.log("target", this.target)
+        if (this.isInput) {
+          this.target.status = stt;
+        } else {
+          this.reportService.targetStatus(this.task, this.target, stt)
+        }
+    }
+
+    addTarget() {
+      this.addingTarget$.next(true);
+      this.inputCallback().finally(() => this.addingTarget$.next(false));
     }
 
 }

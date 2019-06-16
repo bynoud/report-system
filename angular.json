@@ -39,7 +39,7 @@
             },
             "scripts": [
               "libs/jquery-3.4.0.min.js",
-              "libs/popper.min.js",
+              "node_modules/popper.js/dist/umd/popper.min.js",
               "node_modules/bootstrap/dist/js/bootstrap.js"
             ],
             "es5BrowserSupport": true
@@ -100,7 +100,7 @@
             ],
             "scripts": [
               "libs/jquery-3.4.0.min.js",
-              "libs/popper.min.js",
+              "node_modules/popper.js/dist/udm/popper.min.js",
               "node_modules/bootstrap/dist/js/bootstrap.js"
             ],
             "assets": [

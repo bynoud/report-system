@@ -88,7 +88,7 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
     //     this.comments = comments;
     //     this.updateStatus();
     //   }))
-    console.log("init task", this.index);
+    // console.log("init task", this.index);
     
     this.subs.push(this.reportService.onTargetsChanged$(this.task).subscribe(targets => {
       this.targets = targets
@@ -135,7 +135,7 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
       icon: cfg.icon,
       iconColor: this.sanitizer.bypassSecurityTrustStyle(cfg.color)
     };
-    console.log("target", this.targets);
+    // console.log("target", this.targets);
     
   }
 
@@ -145,10 +145,12 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
       comm: new FormControl('', Validators.required),
     })
 
-    var today = new Date();
-    today.setDate(today.getDate() + 7);
-    this.model.redueDate = `${today.toISOString().split('T')[0]}`
-    console.log("redue", this.model.redueDate);
+    // var today = new Date();
+    // today.setDate(today.getDate() + 7);
+    let due = this.task.due.toDate();
+    due.setDate(due.getDate() + 7);
+    this.model.redueDate = `${due.toISOString().split('T')[0]}`
+    // console.log("redue", this.model.redueDate);
     
   }
 
@@ -164,6 +166,14 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
 
   toggleNewTarget() {
     this.newTargetOpened = !this.newTargetOpened;
+  }
+
+  onNewTask() {
+    return this.reportService.addTarget(this.task, this.newTarget.desc, this.newTarget.status)
+      .then(() => {
+        // success
+        this.toggleNewTarget();
+      })
   }
 
 

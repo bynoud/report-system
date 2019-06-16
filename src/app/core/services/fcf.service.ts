@@ -32,5 +32,9 @@ export class FCFService {
         return this.fns.functions.httpsCallable('remindLateMembers')({'uids': uids})
     }
 
+    removeFcmToken(userID: string, token: string) {
+        return this.fns.functions.httpsCallable('removeFcmToken')({userID, token})
+    }
+
 
 }

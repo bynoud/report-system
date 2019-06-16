@@ -23,7 +23,7 @@ export class AppComponent {
     //   if (user) this.router.navigate(['/report'])
     //   else this.router.navigate(['/user/login'])
     // })
-    this.fcmService.onMessageRecieved().subscribe(msg => {
+    this.fcmService.onDataRecieved().subscribe(msg => {
       console.log("FCM", msg);
     })
   }

@@ -44,13 +44,7 @@ export class FlashMessageService {
             // the message is cleared at navigation start
             // this.msgs = {info:"", warn:"", error:""}
             for (var k in this.bsAlertClass) {
-                if (this.savedMsg[k]) {
-                    // if it persist, re-emit that message
-                    this.sendMessage(this.savedMsg[k], k);
-                    delete this.savedMsg[k];
-                } else {
-                    this.messages$.next({msg: "", type: k, class: ""})
-                }
+                this.clearMessage(k)
             }
         })
     }
@@ -68,10 +62,16 @@ export class FlashMessageService {
         this.flashStart$.pipe(
             // cancel previous sub, if new flash message is emitted
             switchMap(flash => {
+                console.warn("flash active", flash);
+                
                 this.msgFlash$.next(flash);
-                return new Promise( resolve => setTimeout(resolve, flash.duration) );
+                return new Promise( resolve => {
+                    setTimeout(resolve, flash.duration) 
+                });
             })
         ).subscribe(() => {
+            console.warn("flash clear");
+            
             this.msgFlash$.next({msg: "", class: "", duration: 0})
          } )
     }
@@ -81,7 +81,9 @@ export class FlashMessageService {
     warn(msg: string, persist: boolean = false) { this.sendMessage(msg, 'warn', persist) }
     error(msg: string, persist: boolean = false) { this.sendMessage(msg, 'error', persist) }
 
-    flash(msg: string, type: string, durationMs: number = 2000) {
+    flash(msg: string, type: string, durationMs: number = 4000) {
+        console.warn("flash", msg, type, durationMs);
+        
         this.flashStart$.next({msg, class: this.getClass(type), duration: durationMs})
     }
 
@@ -92,11 +94,17 @@ export class FlashMessageService {
     sendMessage(msg: string, type: string, persist: boolean = false) {
         if (persist) this.savedMsg[type] = msg;
         this.messages$.next({msg, type, class: this.getClass(type)})
+        console.warn("message sent", msg, type, persist);
     }
 
     clearMessage(type: string) {
-        if (type in this.bsAlertClass) {
+        if (this.savedMsg[type]) {
+            // if it persist, re-emit that message
+            this.sendMessage(this.savedMsg[type], type);
+            delete this.savedMsg[type];
+        } else {
             this.messages$.next({msg: "", type: type, class: ""})
+            console.warn("message cleared", type)
         }
     }
 

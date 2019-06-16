@@ -5,6 +5,8 @@ import { Subscription, Subject } from 'rxjs';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 import { Router, NavigationStart, NavigationEnd, NavigationCancel, NavigationError } from '@angular/router';
 import { ConfigService } from '../services/config.service';
+import { FCMService } from '../services/fcm.service';
+import { FCFService } from '../services/fcf.service';
 
 @Component({
   selector: 'app-navbar',
@@ -17,10 +19,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
   ready = false;
   subs = new Subscription();
   navigating = false;
+  notifPerm: NotificationPermission = 'granted';
 
   constructor(
     private router: Router,
     private authService: AuthService,
+    private fcmService: FCMService,
+    private msgService: FlashMessageService,
     private cfgService: ConfigService
   ) { }
 
@@ -29,6 +34,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.user = user;
       this.ready = true;
     }))
+    this.subs.add(this.fcmService.onPermissionChanged().subscribe(perm => this.notifPerm = perm))
     this.monitorNavigation();
   }
 
@@ -51,7 +57,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
         case event instanceof NavigationStart:
           
           this.navigating = true;
-          console.log("set", this.navigating);
           break;
         
         case event instanceof NavigationEnd:
@@ -59,11 +64,34 @@ export class NavbarComponent implements OnInit, OnDestroy {
         case event instanceof NavigationError:
           // dont go so fast
           setTimeout(() => this.navigating = false, 200)
-          console.log("set", this.navigating);
           break;
       }
     }))
   }
+
+  enableNotif() {
+    this.fcmService.requestToken(this.user.uid)
+  }
+
+  warnNotifDenied() {
+    this.msgService.warn("Notification had been Denied. Click icon on the left of address-bar to enable it")
+  }
+
+  // // testing
+  // testSub: Subscription;
+  // addFcmToken() {
+  //   this.testSub = this.fcmService.onTokenChanged(this.user.uid)
+  //     .subscribe(ok => console.log("token sub", ok))
+  // }
+  // removeFcmSub() {
+  //   this.testSub.unsubscribe();
+  // }
+
+  // sendNotify() {
+  //   console.log("start notify");
+  //   this.fcfService.remindLateMembers(['gIEpVG4JkqS6f5nd5TPGEZp8nEh2', '3PsAxgmHOJaR4k4EapgaC6Gy7of1'])
+  //     .then(res => console.log("done", res))
+  // }
 
 
 }

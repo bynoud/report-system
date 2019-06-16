@@ -34,7 +34,7 @@ export class TeamViewComponent implements OnInit, OnDestroy {
     async getMyTeam() {
         this.team = await this.authService.getMyTeam(this.user, this.deep==0)
         this.loading$.next(false);
-        console.log("XX", this.user, this.team);
+        // console.log("XX", this.user, this.team);
       }
 
 }

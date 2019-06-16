@@ -4,8 +4,8 @@
     <img [src]="user.photoURL" alt="User Avatar" class="mr-4" [style.width.px]="60" [style.height.px]="60">
     <h1 class="mb-0 display-5 font-weight-bold">{{user.displayName.toUpperCase()}}</h1>
 </div>
-<p *ngIf="!tasks"><app-loading size="150px"></app-loading></p>
-<div *ngIf="tasks">
+<p *ngIf="!ready"><app-loading size="150px"></app-loading></p>
+<div *ngIf="ready">
     <h5 *ngIf="tasks.length==0">There's no Opened Reports</h5>
     <app-task-detail *ngFor="let task of tasks; let i = index"
         [task]="task" [index]="i" [allowModify]="allowModify"></app-task-detail>
@@ -14,4 +14,4 @@
 <!-- <button (click)="testAdd()">Add</button>
 <button (click)="testRemove()">Remove</button>
 <button (click)="testModify()">Modify</button>
-<app-report-test *ngFor="let test of tests; let i = index" [index]="i" [test]="test"></app-report-test> -->
+<app-report-test *ngFor="let test of tests$ | async; let i = index" [index]="i" [test]="test"></app-report-test> -->

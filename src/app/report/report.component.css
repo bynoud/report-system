@@ -1,11 +1,10 @@
-#report-collapse-parent {
-    min-width: 100vw;
+/* #report-collapse-parent {
+  min-width: 100vw;
+} */
+@media (min-width: 768px) {
+  #report-collapse-parent {
+    min-width: 0;
+    width: 100%;
   }
-  @media (min-width: 768px) {
-    #report-collapse-parent {
-      min-width: 0;
-      width: 100%;
-    }
-  }
-  
-  
+}
+
