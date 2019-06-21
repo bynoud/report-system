@@ -34,7 +34,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.user = user;
       this.ready = true;
     }))
+
     this.subs.add(this.fcmService.onPermissionChanged().subscribe(perm => this.notifPerm = perm))
+    this.fcmService.onDataRecieved().subscribe(msg => {
+      console.log("FCM", msg);
+    })
+  
     this.monitorNavigation();
   }
 

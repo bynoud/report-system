@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { FCFService } from 'src/app/core/services/fcf.service';
 import { Router } from '@angular/router';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
+import { AngularFirestore } from '@angular/fire/firestore';
 
 const STATES = [
   'inputEmail',
@@ -32,6 +33,7 @@ export class SetupUserComponent implements OnInit {
   
   constructor(
     private router: Router,
+    private afs: AngularFirestore,
     private authService: AuthService,
     private msgService: FlashMessageService
   ) { }
@@ -45,7 +47,7 @@ export class SetupUserComponent implements OnInit {
     this.model.managerID = this.user.managerID;
     this.model.companyEmail = this.user.companyEmail || "";
     this.loading$.next(false);
-    this.authService.getUserWith('role', '==', 'm').then(users => {
+    this.authService.getUsersWith('role', '==', 'm').subscribe(users => {
       this.managers = users.filter(u => u.uid != this.user.uid);
       this.loadingManagers$.next(false);
     })
@@ -80,6 +82,10 @@ export class SetupUserComponent implements OnInit {
     });
     if (msgs.length > 0) {
       this.msgService.info("Account updated successfully", true)
+      // need to wait until the change take effect
+      await this.afs.firestore.doc(`users/${this.user.uid}`).get({source: 'server'})
+        .then(user => {console.log("setupuser", user.data())})
+
     } else {
       this.msgService.warn("No update was made to account", true);
     }

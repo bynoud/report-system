@@ -5,7 +5,7 @@ import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFirestore } from '@angular/fire/firestore';
 
 import { Observable, of, Subject, BehaviorSubject, ReplaySubject, Subscription } from 'rxjs';
-import { switchMap, first, map, mergeMap, catchError, takeLast, concat, take } from 'rxjs/operators';
+import { switchMap, first, map, mergeMap, catchError, takeLast, concat, take, tap } from 'rxjs/operators';
 import { User, Team } from 'src/app/models/user';
 import { FlashMessageService } from 'src/app/core/flash-message/flash-message.service';
 import { auth, firestore } from 'firebase';
@@ -24,6 +24,7 @@ export class AuthService implements CanActivate {
 
   private _authSub: Subscription;
   private _activeUser$ = new ReplaySubject<User>(1);  // only replay the last value
+  private _userInfo$ = new ReplaySubject<User>(1);  // only replay the last value
   // private _activeFBUser$ = new ReplaySubject<firebase.User>(1);
   private _authUserChanged$ = new Subject<boolean>();
 
@@ -47,22 +48,60 @@ export class AuthService implements CanActivate {
   }
 
   private subAuthState() {
-    this._authSub = this.afAuth.authState.subscribe(fbUser => {
-      // console.log("AUTH FB user", fbUser);
-      if (fbUser) {
-        // if (!fbUser.emailVerified) {
-        //   this.userChange(null, fbUser);
-        // } else {
-        this.fs.doc(`users/${fbUser.uid}`).get()
-          .then(user => this.userChange(<User>user.data()))
-          .catch(err => {
-            this.error(err)
-            this.userChange(null)
-          })
-      } else {
-        this.userChange(null)
-      }
-    })
+    // this._authSub = this.afAuth.authState.pipe(
+    //   switchMap(fbUser => {
+    //     if (fbUser) return this.afs.doc<User>(`users/${fbUser.uid}`).valueChanges()
+    //     else return of(null)
+    //   })
+    // ).subscribe(user => this.userChange(user),
+    //   err => {
+    //     this.error(err)
+    //     this.userChange(null)
+    //   })
+
+    this._authSub = this.afAuth.authState.pipe(
+      switchMap(fbUser => {
+        console.log("firebaseUser", fbUser);
+        
+        return fbUser ? this.getUserInfo(fbUser.uid) : of(null)
+      }),  // run once
+      tap(user => this.userChange(user)),
+      switchMap(user => {
+        if (user) return this.afs.doc<User>(`users/${user.uid}`).valueChanges()
+        else return of(null)
+      }), // run multilpe
+    ).subscribe(
+      user => this.userInfoChange(user),
+      err => this.error(err))
+    
+    // .subscribe(fbUser => {
+    //   // console.log("AUTH FB user", fbUser);
+    //   if (fbUser) {
+    //     // if (!fbUser.emailVerified) {
+    //     //   this.userChange(null, fbUser);
+    //     // } else {
+    //     // User data can be updated anytime now
+    //     this.afs.doc(`users/${fbUser.uid}`).get({source: 'server'})  // DONT cache on this
+    //       .subscribe(user => this.userChange(<User>user.data()))
+    //       .catchError(err => {
+    //         this.error(err)
+    //         this.userChange(null)
+    //       })
+    //   } else {
+    //     this.userChange(null)
+    //   }
+    // })
+  }
+
+  private getUserInfo(uid: string): Observable<User|null> {
+    return this.afs.doc(`users/${uid}`).get({source: 'server'})  // DONT cache on this
+      .pipe(
+        map(snap => <User>snap.data()),
+        catchError(err => {
+          this.error(err);
+          return of(null)
+        })
+      )
   }
 
   private unsubAuthState() {
@@ -75,11 +114,20 @@ export class AuthService implements CanActivate {
     // this._activeFBUser$.next(fbUser);
     this._authUserChanged$.next(user ? true : false);
   }
+
+  private userInfoChange(user: User) {
+    console.warn("uesr Info change", user);
+    this._userInfo$.next(user)
+  }
   
 
 
   onUserChanged$() {
     return this._activeUser$.asObservable();
+  }
+
+  onUserInfoUpdated$() {
+    return this._userInfo$.asObservable();
   }
 
   onLoginChanged$() {
@@ -155,11 +203,17 @@ export class AuthService implements CanActivate {
   }
 
 
-  getUserWith(field: string, op: firestore.WhereFilterOp, value: any) {
+  getUserWithProms(field: string, op: firestore.WhereFilterOp, value: any) {
     // console.log("getuserswith", field, op, value);
     
     return this.fs.collection('users').where(field, op, value).get()
       .then(snaps => snaps.docs.map(doc => <User>doc.data()))
+  }
+
+  getUsersWith(field: string, op: firestore.WhereFilterOp, value: any) {
+    // console.log("getuserswith", field, op, value);
+    return this.afs.collection<User>('users', ref => ref.where(field, op, value)).get()
+      .pipe(map(snaps => snaps.docs.map(snap => <User>snap.data())))
   }
 
   // async getPeerMembers() {
@@ -182,24 +236,58 @@ export class AuthService implements CanActivate {
   //   myTeam.addSubteam(new Team(user, await this.getUserWith('managerID', '==', user.uid)))
   //   return myTeam;
   // }
-  async getMyTeam(user: User, upTeamAtBottom: boolean) {
-    // get members
-    let team = new Team(user);
-    team.addMembers(await this.getUserWith('managerID', '==', user.uid));
-    // console.log("getteam", user, team);
+  // async getMyTeamProms(user: User, upTeamAtBottom: boolean) {
+  //   // get members
+  //   console.log("find team for", user, upTeamAtBottom);
     
-    if (upTeamAtBottom && team.size == 0) {
-        if (user.managerID) {
-            team.upLevel(await this.getUser$(user.managerID))
-        } else {
-            team.upLevel(null)
-        }
-        team.addMembers(await
-            this.getUserWith('managerID', '==', user.managerID)
-                .then(users => users.filter(u => u.uid != user.uid))
-        );
+  //   let team = new Team(user);
+  //   team.addMembers(await this.getUserWith('managerID', '==', user.uid));
+  //   console.log("the team", team, user.uid)
+  //   // console.log("getteam", user, team);
+    
+  //   if (upTeamAtBottom && team.size == 0) {
+      
+  //     if (user.managerID) {
+  //         team.upLevel(await this.getUser$(user.managerID))
+  //     } else {
+  //         team.upLevel(null)
+  //     }
+  //     console.log("up team", team);
+  //     team.addMembers(await
+  //         this.getUserWith('managerID', '==', user.managerID)
+  //             .then(users => users.filter(u => u.uid != user.uid))
+  //     );
+  //     console.log("up team ->", team);
+  //   }
+  //   return team;
+  // }
+
+  getMyTeam(user: User, onlyMe: boolean) {
+    // get members
+    console.log("find team for", user);
+
+    if ((user.role == 't' && onlyMe)) {
+      return of(new Team(user))
+    } else {
+      let managerID = (user.role == 't') ? user.managerID : user.uid
+      return this.getUser(managerID).pipe(
+        switchMap(manager => {
+          console.log("manager", managerID, manager);
+          
+          let team = new Team(manager)
+          return this.getUsersWith('managerID', '==', managerID)
+            .pipe(map(mems => {
+              team.addMembers(mems)
+              return team
+            }))
+        }),
+      )
     }
-    return team;
+  }
+
+  private getUser(uid: string): Observable<User> {
+    if (uid) return this.afs.doc<User>(`users/${uid}`).get().pipe(map(snap => <User>snap.data()))
+    else return of(null)
   }
 
   

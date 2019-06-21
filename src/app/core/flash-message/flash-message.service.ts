@@ -94,7 +94,7 @@ export class FlashMessageService {
     sendMessage(msg: string, type: string, persist: boolean = false) {
         if (persist) this.savedMsg[type] = msg;
         this.messages$.next({msg, type, class: this.getClass(type)})
-        console.warn("message sent", msg, type, persist);
+        // console.warn("message sent", msg, type, persist);
     }
 
     clearMessage(type: string) {
@@ -104,7 +104,7 @@ export class FlashMessageService {
             delete this.savedMsg[type];
         } else {
             this.messages$.next({msg: "", type: type, class: ""})
-            console.warn("message cleared", type)
+            // console.warn("message cleared", type)
         }
     }
 

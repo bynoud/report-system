@@ -19,7 +19,10 @@ export class ReportUserComponent implements OnInit, OnDestroy {
   subParams: Subscription;
   subTasks: Subscription;
   taskUnsubFn: () => void;
+
   allowModify: boolean;
+  isDirectManager: boolean;
+  isActiveUser: boolean;
 
   tests: any[] = [];
   tests$ = new Subject<{a:string,b:string}[]>();
@@ -89,7 +92,10 @@ export class ReportUserComponent implements OnInit, OnDestroy {
 
     let actUser = await this.authService.getActiveUser$();
     let user = userID ? await this.authService.getUser$(userID) : actUser;
-    this.allowModify = (user.uid == actUser.uid) || (user.managerID == actUser.uid);
+
+    this.isActiveUser = user.uid == actUser.uid;
+    this.isDirectManager = user.managerID == actUser.uid;
+    this.allowModify = this.isActiveUser || this.isDirectManager;
     this.user = user;
 
     if (user) {

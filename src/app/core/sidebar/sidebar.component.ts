@@ -28,8 +28,12 @@ export class SidebarComponent {
     ) { }
 
     ngOnInit() {
+        console.warn("sidebar init");
+        
         this.subs.add(this.authService.onUserChanged$().subscribe(user => {
             this.user = user;
+            console.warn("sidebar user", this.user);
+            
             // if (user) {
             //     this.loadingUsers$.next(true);
             //     // this.authService.getUsers$().then( users => {

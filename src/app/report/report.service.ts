@@ -249,60 +249,98 @@ export class ReportService implements OnDestroy {
         // let sums: ReportSummaries = allSums.find(s => s.user.uid == task.userID)
     }
 
-    async getSummariesAllUsers(allSums: ReportSummaries[]) {
-        return new Promise<(()=>void)[]>((resolve) => {
-            const sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
-            let unsubFns: (()=>void)[] = [];
-            unsubFns.push(this.fs.collectionGroup('tasks')
-                .where('updatedAt', ">", sinceDate).orderBy("updatedAt", "desc")
-                .onSnapshot(tasksSnaps => {
-                    let sumPromises: Promise<void>[] = [];
-                    tasksSnaps.docChanges().forEach(change => {
-                        // console.log("change", change);
-                        switch (change.type) {
+    // async getSummariesAllUsers(allSums: ReportSummaries[]) {
+    //     return new Promise<(()=>void)[]>((resolve) => {
+    //         const sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
+    //         let unsubFns: (()=>void)[] = [];
+    //         unsubFns.push(this.fs.collectionGroup('tasks')
+    //             .where('updatedAt', ">", sinceDate).orderBy("updatedAt", "desc")
+    //             .onSnapshot(tasksSnaps => {
+    //                 let sumPromises: Promise<void>[] = [];
+    //                 tasksSnaps.docChanges().forEach(change => {
+    //                     // console.log("change", change);
+    //                     switch (change.type) {
                             
-                            // add new task subcription on 'add' event
-                            case 'added':
-                                sumPromises.push(this.getSummary(change.doc, sinceDate, allSums)
-                                    .then(fn => {unsubFns.push(fn)})
-                                    .catch(err => this.error(err)))
-                                break;
-                            // switch position on update
-                            case 'modified':
-                                this.switchSummary(change.doc, change.oldIndex, change.newIndex, allSums);
-                                break;
-                        }
-                    })
+    //                         // add new task subcription on 'add' event
+    //                         case 'added':
+    //                             sumPromises.push(this.getSummary(change.doc, sinceDate, allSums)
+    //                                 .then(fn => {unsubFns.push(fn)})
+    //                                 .catch(err => this.error(err)))
+    //                             break;
+    //                         // switch position on update
+    //                         case 'modified':
+    //                             this.switchSummary(change.doc, change.oldIndex, change.newIndex, allSums);
+    //                             break;
+    //                     }
+    //                 })
                     
-                    Promise.all(sumPromises).then(() => {
-                        resolve(unsubFns);
-                    })
-                })
-            );
-        })
-    }
+    //                 Promise.all(sumPromises).then(() => {
+    //                     resolve(unsubFns);
+    //                 })
+    //             })
+    //         );
+    //     })
+    // }
+
+    // async getAllSummaries(user: User) {
+    //     const allSums: ReportSummaries[] = []
+    //     const obs = new Observable((observer) => {
+    //         const {next, error} = observer;
+    //         const sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
+    //         const subs = new Subscription;
+    //         subs.add(this.authService.getMyTeam(user, true).subscribe(team => {
+    //             for (const user of team.members) {
+    //                 const fn = await this.getSummaries(sinceDate, user.leader, allSums);
+    //                 unsubsFns.push(...fn);
+    //             }
+    //         }))
+    //     })
+        
+        
+
+    // }
+
+    // getSummaries(since: firestore.Timestamp, user: User) {
+    //     this.afs.collection<Task>(`reports/${user.uid}/tasks`,
+    //         ref => ref.orderBy('updatedAt', 'desc').where('updatedAt', '>', since))
+    //         .stateChanges().
+    //         .onSnapshot(snaps => {
+    //             snaps.docChanges().forEach(async change => {
+    //                 // console.log("change", change);
+    //                 switch (change.type) {
+    //                     // add new task subcription on 'add' event
+    //                     case 'added':
+    //                             unsubsFns.push(await this.getSummary(change.doc, since, allSums));
+    //                         break;
+    //                     // switch position on update
+    //                     case 'modified':
+    //                         this.switchSummary(change.doc, change.oldIndex, change.newIndex, allSums);
+    //                         break;
+    //                 }
+    //             })
+    //         })
+    // }
 
     async getAllSummaries(allSums: ReportSummaries[]) {
         const activeUser = await this.authService.getActiveUser$();
-        const team = await this.authService.getMyTeam(activeUser, true);
-        const unsubsFns: (()=>void)[] = [];
+        const team = await this.authService.getMyTeam(activeUser, false).toPromise();
+        const unsubFns: (()=>void)[] = [];
         const sinceDate = fromMillis(nowMillis() - SUMMARY_SINCE_MS);
-        // console.log("teamXXX", team);
+        console.log("teamXXX", team);
         
-        for (const user of team.members) {
-            const fn = await this.getSummaries(sinceDate, user.leader, allSums);
-            unsubsFns.push(...fn);
+        for (const user of team.getHeads()) {
+            this.getSummariesProms(sinceDate, user, allSums, unsubFns);
         }
 
         return () => {
-            unsubsFns.forEach(fn => fn())
+            unsubFns.forEach(fn => fn())
         }
     }
 
-    async getSummaries(since: firestore.Timestamp, user: User, allSums: ReportSummaries[]):
-        Promise<(()=>void)[]> {
-        const unsubsFns: (()=>void)[] = [];
-        unsubsFns.push(this.fs.collection(`reports/${user.uid}/tasks`).orderBy('updatedAt', 'desc')
+    getSummariesProms(since: firestore.Timestamp, user: User, allSums: ReportSummaries[], unsubFns: (()=>void)[]) {
+        console.log("getSummaries for", user, since);
+        
+        unsubFns.push(this.fs.collection(`reports/${user.uid}/tasks`).orderBy('updatedAt', 'desc')
             .where('updatedAt', '>', since)
             .onSnapshot(snaps => {
                 snaps.docChanges().forEach(async change => {
@@ -310,7 +348,7 @@ export class ReportService implements OnDestroy {
                     switch (change.type) {
                         // add new task subcription on 'add' event
                         case 'added':
-                                unsubsFns.push(await this.getSummary(change.doc, since, allSums));
+                                unsubFns.push(await this.getSummary(change.doc, since, allSums));
                             break;
                         // switch position on update
                         case 'modified':
@@ -320,7 +358,6 @@ export class ReportService implements OnDestroy {
                 })
             })
         );
-        return unsubsFns;
     }
 
     // // Destruction way: Gather comment in last 7 days, group by user
@@ -635,8 +672,11 @@ export class ReportService implements OnDestroy {
     }
 
     async sendReminder(all: boolean = true) {
-        const uids = await this.authService.getUserWith('managerID', '==', this.userID).then(users => users.map(u => u.uid))
-        return this.fcf.remindLateMembers(uids)
+        this.authService.getUsersWith('managerID', '==', this.userID)
+            .subscribe(users => {
+                const uids = users.map(u => u.uid)
+                this.fcf.remindLateMembers(uids)
+            })
     }
 
 

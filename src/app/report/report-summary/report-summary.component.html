@@ -2,7 +2,8 @@
 <p *ngIf="!ready"><app-loading></app-loading></p>
 
 <div *ngIf="ready">
-  <h5 *ngIf="summaries.length==0">There's no update in last 7 days</h5>
+  <h5 *ngIf="activeUser.managerID==''" class="text-warning text-system">This only show your Summaries. Join a team to see your Team reports</h5>
+  <h6 *ngIf="summaries.length==0" class="text-system">There's no update in last 7 days</h6>
   <!-- <div class="card" *ngFor="let tasks of summaries | keyvalue">
     <div class="card-header">{{tasks.key}}</div>
     <app-task-detail *ngFor="let task of tasks.value" [task]="task"></app-task-detail>

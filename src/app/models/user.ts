@@ -22,6 +22,7 @@ export interface User {
   managerID: string,
   companyEmail?: string,
 }
+
 export class Team {
   private _leader: User;
   private _mems: Team[];
@@ -49,6 +50,15 @@ export class Team {
 
   get members(): Team[] {
     return this._mems;
+  }
+
+  getHeads(level = 0, users: User[] = []) {
+    if (this._leader) users.push(this._leader);
+    this._mems.forEach(mem => {
+      users.push(mem._leader)
+      if (level != 0) mem.getHeads(level-1, users)
+    })
+    return users
   }
 
   addMember(user: User) {

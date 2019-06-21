@@ -21,6 +21,7 @@ export function createUser(data: any, context: functions.https.CallableContext) 
             email: tok.email,
             displayName: tok.name,
             photoURL: tok.picture,
+            companyEmail: "",
             ...data,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             uid: uid,

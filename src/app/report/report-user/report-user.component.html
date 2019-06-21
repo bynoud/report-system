@@ -1,9 +1,26 @@
 
 
-<div *ngIf="user" class="breadcrumb align-items-center">
-    <img [src]="user.photoURL" alt="User Avatar" class="mr-4" [style.width.px]="60" [style.height.px]="60">
-    <h1 class="mb-0 display-5 font-weight-bold">{{user.displayName.toUpperCase()}}</h1>
+<div *ngIf="user" class="breadcrumb flex-column">
+    <div class="d-flex align-items-center mb-4">
+        <img [src]="user.photoURL" alt="User Avatar" class="mr-4" [style.width.px]="60" [style.height.px]="60">
+        <h1 class="mb-0 display-5 font-weight-bold text-uppercase">{{user.displayName}}</h1>
+        <h3 class="d-none d-lg-flex font-italic ml-4">({{user.companyEmail || user.email}})</h3>
+    </div>
+    <p *ngIf="!allowModify" class="text-warning">Read only mode</p>
+    <p *ngIf="isDirectManager" class="text-info">This is your direct member. You can change Task's Status or Assign new task</p>
 </div>
+
+<!-- <div *ngIf="user" class="jumbotron">
+    <div>
+        <img [src]="user.photoURL" alt="User Avatar" class="mr-4" [style.width.px]="60" [style.height.px]="60">
+        <h1 class="mb-0 display-5 font-weight-bold text-uppercase">{{user.displayName}}</h1>
+    </div>
+    <p class="d-none d-lg-flex lead">({{user.companyEmail || user.email}})</p>
+    <hr class="my-4">
+    <p *ngIf="!allowModify" class="text-warning">Read only mode</p>
+    <p *ngIf="isDirectManager" class="text-info">This is your direct member. You can change Task's Status or Assign new task</p>
+</div> -->
+
 <p *ngIf="!ready"><app-loading size="150px"></app-loading></p>
 <div *ngIf="ready">
     <h5 *ngIf="tasks.length==0">There's no Opened Reports</h5>
