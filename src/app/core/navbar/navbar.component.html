@@ -12,22 +12,21 @@
 
       <div class="navbar-nav flex-row ml-auto" *ngIf="ready">
 
-        <!-- <a [routerLink]="" (click)="addFcmToken()" class="nav-item nav-link">Add FCM</a>
-        <a [routerLink]="" (click)="removeFcmSub()" class="nav-item nav-link">stop FCM</a>
-        <a [routerLink]="" (click)="sendNotify()" class="nav-item nav-link">send Notify</a> -->
-        <a *ngIf="notifPerm=='default'" class="nav-item nav-link fas fa-bell-slash text-warning"
-          [routerLink]="" (click)="enableNotif()" [style.font-size]="'1.5rem'"
-          data-toggle="tooltip" title="Enable receive notification" data-placement="bottom"></a>
+        <ng-template [ngIf]="user">
+          <a *ngIf="notifPerm=='default'" class="nav-item nav-link fas fa-bell-slash text-warning"
+            [routerLink]="" (click)="enableNotif()" [style.font-size]="'1.5rem'"
+            data-toggle="tooltip" title="Enable receive notification" data-placement="bottom"></a>
 
-        <a *ngIf="notifPerm=='denied'" class="nav-item nav-link fas fa-bell-slash text-danger"
-          (click)="warnNotifDenied()" [style.font-size]="'1.5rem'"
-          data-toggle="tooltip" data-placement="bottom"
-          title="Notification had been Denied. Click icon on the left of address-bar to enable it"></a>
+          <a *ngIf="notifPerm=='denied'" class="nav-item nav-link fas fa-bell-slash text-danger"
+            (click)="warnNotifDenied()" [style.font-size]="'1.5rem'"
+            data-toggle="tooltip" data-placement="bottom"
+            title="Notification had been Denied. Click icon on the left of address-bar to enable it"></a>
 
-        <a *ngIf="user" class="nav-item nav-link fas fa-plus"
-          routerLink=""
-          (click)="onNewTask()" [style.font-size]="'1.5rem'"
-          data-toggle="tooltip" title="Add new Task" data-placement="bottom"></a>
+          <a class="nav-item nav-link fas fa-plus"
+            routerLink=""
+            (click)="onNewTask()" [style.font-size]="'1.5rem'"
+            data-toggle="tooltip" title="Add new Task" data-placement="bottom"></a>
+        </ng-template>
       </div>
     </div>
 

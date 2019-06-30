@@ -35,7 +35,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.ready = true;
     }))
 
-    this.subs.add(this.fcmService.onPermissionChanged().subscribe(perm => this.notifPerm = perm))
+    this.subs.add(this.fcmService.onPermissionChanged().subscribe(perm => {
+      this.notifPerm = perm
+      console.log("notifPerm", this.notifPerm);
+      
+    }))
     this.fcmService.onDataRecieved().subscribe(msg => {
       console.log("FCM", msg);
     })

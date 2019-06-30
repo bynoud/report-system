@@ -20,8 +20,7 @@ export class LoginUserComponent implements OnInit, OnDestroy {
   ) {
    }
 
-  loginGoogle = false;
-  loginEmail = false;
+  loginBy = {google: true, facebook: false, email: false}
 
   loginForm: FormGroup;
   subs: Subscription[] = [];
@@ -37,8 +36,8 @@ export class LoginUserComponent implements OnInit, OnDestroy {
   ngOnInit() {
 
     this.subs.push(this.route.paramMap.subscribe( params => {
-      this.loginGoogle = params.get('google') ? true : false;
-      this.loginEmail = params.get('email') ? true : false;
+      this.loginBy.facebook = params.get('facebook') ? true : false;
+      this.loginBy.email = params.get('email') ? true : false;
     }));
 
     // this.subs.push(this.authService.$().subscribe(user => {

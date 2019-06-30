@@ -1,21 +1,21 @@
 
 
-<div class="card mt-4" [appLoadingBy]="loading$" id="login-user-card">
+<div class="card mt-4" id="login-user-card">
     <div class="card-header">
         SIGN IN
     </div>
     <div class="card-body d-flex flex-column align-items-center">
 
-        <ng-template [ngIf]="loginGoogle">
-            <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center w-100" (click)="oathLogin('google')">
+        <ng-template [ngIf]="loginBy.google">
+            <button [appLoadingBy]="loading$" class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center w-100" (click)="oathLogin('google')">
                 <img src="assets/google-logo-512px.png" width="20px" alt="G-logo" class="mr-2">
                 Login with Google
             </button>
 
-            <h5 class="text-primary">or</h5>
+            <!-- <h5 class="text-primary">or</h5> -->
         </ng-template>
 
-        <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center w-100" (click)="oathLogin('facebook')">
+        <button [appLoadingBy]="loading$" *ngIf="loginBy.facebook" class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center w-100" (click)="oathLogin('facebook')">
             <img src="assets/facebook-logo-900px.png" width="20px" alt="F-logo"
                  class="mr-2">
             Login with Facebook

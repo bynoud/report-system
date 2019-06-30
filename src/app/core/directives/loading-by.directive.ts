@@ -1,6 +1,5 @@
 import { Directive, ElementRef, Input, OnInit, ViewContainerRef, ComponentFactoryResolver, ComponentRef, Component, ApplicationRef, ViewChild, Injector } from '@angular/core';
 import { Subscription, BehaviorSubject } from 'rxjs';
-import { DomPortalHost, PortalHost, TemplatePortal } from '@angular/cdk/portal';
 
 
 @Component({
@@ -33,8 +32,6 @@ styles: [`
 }`]
 })
 export class LoadingByContentComponent {
-  private portalHost: PortalHost;
-  private portal;
   @ViewChild('loadingContainer') loadingContainerTmpl;
 
   @Input() outletEle: any;
@@ -42,12 +39,7 @@ export class LoadingByContentComponent {
   @Input() display: string;
   @Input() text: string;
 
-  constructor(
-    private componentFactoryResolver: ComponentFactoryResolver,
-    private injector: Injector,
-    private appRef: ApplicationRef,
-    private viewContainerRef: ViewContainerRef
-  ){}
+  constructor(){}
 
 }
 
@@ -59,36 +51,52 @@ export class LoadingByDirective implements OnInit {
   @Input('appLoadingBy') loadingChanged$: BehaviorSubject<boolean>;
   @Input() loadingText: string;
 
-  savedStates = {};
   loadingCtx: {text: string, hide: boolean};
   subs: Subscription;
+  outletEle: any;
+  loadingEle: any;
+
+  savedStates = {};
+  isButton = false;
 
   constructor(
     private element: ElementRef,
     private vcRef: ViewContainerRef,
-    private factoryResolve: ComponentFactoryResolver,
-    private appRef: ApplicationRef
+    private factoryResolve: ComponentFactoryResolver
   ) {}
 
   ngOnInit() {
-    const comp = this.createLoadingElement();
+    this.createLoadingElement();
     this.subs = this.loadingChanged$.subscribe(val => {
-      if (val) comp.style.display = 'flex';
-      else comp.style.display = 'none';
-
+      if (val) this.showLoading()
+      else this.hideLoading()
     })
+  }
 
+  showLoading() {
+    this.loadingEle.style.display = 'flex';
+    if (this.isButton) {
+      this.savedStates['disabled'] = this.outletEle.disabled
+      this.outletEle.disabled = true
+    }
+  }
+
+  hideLoading() {
+    this.loadingEle.style.display = 'none';
+    if (this.isButton) {
+      this.outletEle.disabled = this.savedStates['disabled']
+    }
   }
 
   createLoadingElement() {
-    const outletEle = this.element.nativeElement;
-    outletEle.style.position = 'relative';
+    this.outletEle = this.element.nativeElement;
+    this.outletEle.style.position = 'relative';
     const factory = this.factoryResolve.resolveComponentFactory(LoadingByContentComponent);
     const component = this.vcRef.createComponent(factory, null, this.vcRef.injector);
     const templ = this.vcRef.createEmbeddedView(component.instance.loadingContainerTmpl, {text: "TBD"});
-    const loadingEle = templ.rootNodes[0];
-    outletEle.appendChild(loadingEle);
-    return loadingEle;
+    this.loadingEle = templ.rootNodes[0];
+    this.outletEle.appendChild(this.loadingEle);
+    this.isButton = this.outletEle.tagName == "BUTTON"
   }
 
 
